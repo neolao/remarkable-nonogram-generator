@@ -1,0 +1,23 @@
+export const CORE_VERSION = "0.1.0";
+
+export type { Nonogram } from "./nonogram-grid.js";
+export {
+	CLUE_AREA_MARGIN_PX,
+	createNonogram,
+	MAX_GRID_HEIGHT,
+	MAX_GRID_WIDTH,
+	MIN_CELL_SIZE_PX,
+	REMARKABLE_2_PAGE_HEIGHT_PX,
+	REMARKABLE_2_PAGE_WIDTH_PX,
+} from "./nonogram-grid.js";
+export type {
+	RemarkableAuthOptions,
+	RemarkableSession,
+} from "./remarkable-auth.js";
+export { authenticate } from "./remarkable-auth.js";
+export type {
+	CredentialStore,
+	RemarkableCredentials,
+} from "./remarkable-credential-store.js";
+export type { UploadPdfOptions } from "./remarkable-upload.js";
+export { uploadPdf } from "./remarkable-upload.js";
