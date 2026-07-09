@@ -14,4 +14,11 @@ Defined in: `packages/core/src/remarkable-credential-store.ts`
 | cells | boolean[][] | `[row][col]`, filled (true) / empty (false), shape must match width x height |
 Defined in: `packages/core/src/nonogram-grid.ts`
 
-No clue, rendering, or persistence model exists yet — those will be populated as later `/vibe:feature` items build them.
+## NonogramClues
+| Field | Type | Notes |
+|---|---|---|
+| rowClues | number[][] | One clue-number list per row, top to bottom; `[0]` for an entirely empty row |
+| columnClues | number[][] | One clue-number list per column, left to right; `[0]` for an entirely empty column |
+Defined in: `packages/core/src/nonogram-clues.ts`
+
+No rendering or persistence model exists yet — those will be populated as later `/vibe:feature` items build them.

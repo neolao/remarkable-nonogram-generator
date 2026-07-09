@@ -1,5 +1,7 @@
 export const CORE_VERSION = "0.1.0";
 
+export type { NonogramClues } from "./nonogram-clues.js";
+export { computeNonogramClues } from "./nonogram-clues.js";
 export type { Nonogram } from "./nonogram-grid.js";
 export {
 	CLUE_AREA_MARGIN_PX,
