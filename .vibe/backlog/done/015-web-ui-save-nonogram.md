@@ -1,5 +1,5 @@
 ---
-status: todo
+status: done
 depends_on: [007, 013]
 ---
 # Web UI: Save Nonogram
