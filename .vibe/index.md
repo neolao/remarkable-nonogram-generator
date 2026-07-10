@@ -5,6 +5,7 @@
 - [`modules/remarkable-cloud.md`](.vibe/modules/remarkable-cloud.md) — reMarkable Cloud pairing, credential storage, PDF upload (generic, ported from remarkable-maze-generator)
 - [`modules/nonogram-domain.md`](.vibe/modules/nonogram-domain.md) — core nonogram grid data model (filled/empty cells) and row/column clue computation, validated against reMarkable 2 page size constants
 - [`modules/nonogram-rendering.md`](.vibe/modules/nonogram-rendering.md) — renders a nonogram grid and its clues to SVG (live preview) and to a reMarkable-2-sized PDF (download/send)
+- [`modules/nonogram-persistence.md`](.vibe/modules/nonogram-persistence.md) — file-based save/list/load/delete of nonograms, one JSON file per id, foundation for the upcoming `/api/nonograms/*` routes
 - [`modules/web-server.md`](.vibe/modules/web-server.md) — Fastify server + static frontend, currently limited to the reMarkable connection flow
 
 ## Observed patterns

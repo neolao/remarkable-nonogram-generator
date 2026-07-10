@@ -17,6 +17,12 @@ export {
 	REMARKABLE_2_PAGE_WIDTH_PT,
 	renderNonogramToPdf,
 } from "./nonogram-pdf.js";
+export type {
+	NonogramStore,
+	NonogramSummary,
+	SavedNonogram,
+	SaveNonogramInput,
+} from "./nonogram-store.js";
 export type { RenderNonogramToSvgOptions } from "./nonogram-svg.js";
 export { renderNonogramToSvg } from "./nonogram-svg.js";
 export type {

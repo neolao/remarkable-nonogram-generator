@@ -13,3 +13,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Row and column clues (the numeric hints of a nonogram puzzle) are now computed automatically from a drawn grid, with an empty row or column represented by a single 0
 - Nonogram grids can now be rendered as an SVG image, with filled and empty cells visually distinguished and row/column clues shown alongside the grid, for future use as a live preview
 - Nonogram grids can now be rendered as a downloadable PDF sized for the reMarkable 2 tablet, matching the same grid/clue layout as the live preview
+- Nonograms can now be saved to disk under a generated id, listed, reloaded, and deleted, laying the groundwork for saving and reopening puzzles from the web app
