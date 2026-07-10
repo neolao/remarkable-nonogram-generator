@@ -1,5 +1,5 @@
 ---
-status: todo
+status: done
 depends_on: [002, 013]
 ---
 # Web UI: Live Clue Display
