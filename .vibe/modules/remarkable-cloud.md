@@ -1,9 +1,9 @@
 # Module: remarkable-cloud
-**Role:** reMarkable Cloud integration — device pairing/authentication, credential persistence, and PDF upload. Fully generic (no nonogram-specific logic).
+**Role:** reMarkable Cloud integration — device pairing/authentication, credential persistence, and PDF upload. The core layer (`remarkable-auth.ts`, `remarkable-upload.ts`, `remarkable-credential-store.ts`) is fully generic (no nonogram-specific logic); `packages/web/src/remarkable-routes.ts` is the nonogram-aware HTTP layer on top of it, since it also loads and renders a saved nonogram to send it.
 **Files:** `packages/core/src/remarkable-auth.ts`, `packages/core/src/remarkable-upload.ts`, `packages/core/src/remarkable-credential-store.ts`, `packages/web/src/remarkable-credential-store.ts`, `packages/web/src/remarkable-routes.ts`
 **Exports:**
 - `authenticate(store, pairingCode, options?): Promise<RemarkableSession>` — pairs a new device or reuses stored credentials
 - `uploadPdf(session, filePath, visibleName, options): Promise<void>` — uploads a local PDF to the account root or a named folder
 - `createFileCredentialStore(filePath): CredentialStore` — persists the device token to a `0o600` JSON file (default: `~/.config/remarkable-nonogram-generator/credentials.json`)
-- `registerRemarkableRoutes(app, store)` — registers `GET /api/remarkable/status` and `POST /api/remarkable/pair` on a Fastify instance
-**Depends on:** `rmapi-js` (reMarkable Cloud client)
+- `registerRemarkableRoutes(app, credentialStore, nonogramStore)` — registers `GET /api/remarkable/status`, `POST /api/remarkable/pair`, and `POST /api/nonograms/:id/send` on a Fastify instance. The send route loads the nonogram by id via `NonogramStore` ([[nonogram-persistence]]) (404 if unknown), checks for stored credentials (409 `not_authenticated` if none), authenticates, renders it to PDF via `renderNonogramToPdf` ([[nonogram-rendering]]), and uploads it under the saved nonogram's name (200 with `visibleName`), forwarding an optional `folder` from the request body
+**Depends on:** `rmapi-js` (reMarkable Cloud client); `packages/web/src/remarkable-routes.ts` additionally depends on `modules/nonogram-persistence.md` and `modules/nonogram-rendering.md`

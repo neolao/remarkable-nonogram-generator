@@ -53,7 +53,7 @@ export function buildServer(options: BuildServerOptions = {}) {
 	});
 
 	app.get("/api/version", async () => ({ core: CORE_VERSION }));
-	registerRemarkableRoutes(app, credentialStore);
+	registerRemarkableRoutes(app, credentialStore, nonogramStore);
 	registerNonogramRoutes(app, nonogramStore);
 
 	return app;
