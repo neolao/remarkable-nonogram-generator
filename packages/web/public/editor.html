@@ -13,6 +13,23 @@
       <div class="card">
         <p id="editor-status">Loading...</p>
         <p id="editor-error" role="alert"></p>
+
+        <div id="size-section" class="size-section" style="display: none;">
+          <div class="size-fields">
+            <label class="field">
+              Width
+              <input type="number" id="grid-width" min="1" value="10" />
+            </label>
+            <label class="field">
+              Height
+              <input type="number" id="grid-height" min="1" value="10" />
+            </label>
+            <button id="size-submit" class="button" type="button">Create grid</button>
+          </div>
+          <p id="size-error" role="alert"></p>
+        </div>
+
+        <div id="nonogram-grid" class="nonogram-grid"></div>
       </div>
 
       <a class="button" href="./index.html">Back to list</a>

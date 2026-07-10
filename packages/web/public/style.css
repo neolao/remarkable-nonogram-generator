@@ -195,6 +195,67 @@ button:disabled {
 	min-height: 1.25rem;
 }
 
+.size-section {
+	margin-bottom: 1rem;
+}
+
+.size-fields {
+	display: flex;
+	align-items: flex-end;
+	gap: 1rem;
+	flex-wrap: wrap;
+}
+
+.size-fields input {
+	width: 5rem;
+}
+
+#size-error {
+	margin: 0.5rem 0 0;
+	color: var(--color-danger);
+	font-weight: 600;
+	min-height: 1.25rem;
+}
+
+.nonogram-grid {
+	display: none;
+	grid-template-columns: repeat(var(--grid-columns), 22px);
+	grid-template-rows: repeat(var(--grid-rows), 22px);
+	gap: 1px;
+	background: var(--color-border);
+	border: 1px solid var(--color-border);
+	width: fit-content;
+	max-width: 100%;
+	overflow: auto;
+}
+
+.nonogram-grid.visible {
+	display: grid;
+}
+
+.nonogram-cell {
+	width: 22px;
+	height: 22px;
+	padding: 0;
+	margin: 0;
+	border: none;
+	border-radius: 0;
+	background: var(--color-surface);
+	cursor: pointer;
+}
+
+.nonogram-cell:hover {
+	background: var(--color-bg);
+}
+
+.nonogram-cell.filled {
+	background: var(--color-text);
+}
+
+.nonogram-cell.filled:hover {
+	background: var(--color-accent);
+}
+
 @media (max-width: 600px) {
 	body {
 		padding: 1rem 0.75rem;
