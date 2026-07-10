@@ -1,5 +1,5 @@
 ---
-status: todo
+status: done
 depends_on: [004]
 ---
 # Web API: Nonogram PDF Generation Endpoint
