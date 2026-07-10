@@ -20,3 +20,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The web app can now render a live SVG preview of any grid through its API, even before it has been saved
 - The web app can now generate a downloadable PDF for any grid through its API, ready to print or send to a reMarkable tablet
 - A saved nonogram can now be sent directly to a paired reMarkable tablet through the web app's API, with a clear message when pairing is required first
+- The web app's home page now lists every saved nonogram with its name and size, lets you start a new one, and lets you delete one from the list without reloading the page
