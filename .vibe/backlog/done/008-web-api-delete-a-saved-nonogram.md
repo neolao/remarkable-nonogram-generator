@@ -1,5 +1,5 @@
 ---
-status: todo
+status: done
 depends_on: [005]
 ---
 # Web API: Delete a Saved Nonogram
