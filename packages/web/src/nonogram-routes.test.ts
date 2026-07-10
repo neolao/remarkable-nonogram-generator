@@ -239,3 +239,38 @@ describe("PUT /api/nonograms/:id", () => {
 		expect(unchanged?.nonogram).toEqual(sampleNonogram);
 	});
 });
+
+describe("DELETE /api/nonograms/:id", () => {
+	it("removes a known nonogram, so a subsequent GET returns 404", async () => {
+		const store = createFileNonogramStore(nonogramsPath);
+		const saved = await store.save({
+			name: "First puzzle",
+			nonogram: sampleNonogram,
+		});
+		const app = buildServer({ credentialsPath, nonogramsPath });
+
+		const deleteResponse = await app.inject({
+			method: "DELETE",
+			url: `/api/nonograms/${saved.id}`,
+		});
+
+		expect(deleteResponse.statusCode).toBe(204);
+
+		const getResponse = await app.inject({
+			method: "GET",
+			url: `/api/nonograms/${saved.id}`,
+		});
+		expect(getResponse.statusCode).toBe(404);
+	});
+
+	it("returns 404 rather than a server error for an unknown id", async () => {
+		const app = buildServer({ credentialsPath, nonogramsPath });
+
+		const response = await app.inject({
+			method: "DELETE",
+			url: "/api/nonograms/does-not-exist",
+		});
+
+		expect(response.statusCode).toBe(404);
+	});
+});

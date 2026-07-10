@@ -80,6 +80,21 @@ async function handleUpdate(
 	});
 }
 
+async function handleDelete(
+	store: NonogramStore,
+	request: FastifyRequest<{ Params: { id: string } }>,
+	reply: FastifyReply,
+) {
+	const existing = await store.load(request.params.id);
+	if (!existing) {
+		reply.code(404);
+		return { error: "Nonogram not found" };
+	}
+
+	await store.delete(request.params.id);
+	reply.code(204);
+}
+
 export function registerNonogramRoutes(
 	app: FastifyInstance,
 	store: NonogramStore,
@@ -95,5 +110,9 @@ export function registerNonogramRoutes(
 	app.put<{ Params: { id: string }; Body: SaveNonogramRequestBody }>(
 		"/api/nonograms/:id",
 		(request, reply) => handleUpdate(store, request, reply),
+	);
+	app.delete<{ Params: { id: string } }>(
+		"/api/nonograms/:id",
+		(request, reply) => handleDelete(store, request, reply),
 	);
 }

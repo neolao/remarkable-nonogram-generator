@@ -5,8 +5,8 @@
 - [`modules/remarkable-cloud.md`](.vibe/modules/remarkable-cloud.md) — reMarkable Cloud pairing, credential storage, PDF upload (generic, ported from remarkable-maze-generator)
 - [`modules/nonogram-domain.md`](.vibe/modules/nonogram-domain.md) — core nonogram grid data model (filled/empty cells) and row/column clue computation, validated against reMarkable 2 page size constants
 - [`modules/nonogram-rendering.md`](.vibe/modules/nonogram-rendering.md) — renders a nonogram grid and its clues to SVG (live preview) and to a reMarkable-2-sized PDF (download/send)
-- [`modules/nonogram-persistence.md`](.vibe/modules/nonogram-persistence.md) — file-based save/list/load/delete of nonograms, one JSON file per id, backs the `/api/nonograms` list/create/get/update routes
-- [`modules/web-server.md`](.vibe/modules/web-server.md) — Fastify server + static frontend, exposes the reMarkable connection flow and the full nonogram list/create/get/update API (configurable listen port via `PORT`)
+- [`modules/nonogram-persistence.md`](.vibe/modules/nonogram-persistence.md) — file-based save/list/load/delete of nonograms, one JSON file per id, backs the full `/api/nonograms` list/create/get/update/delete routes
+- [`modules/web-server.md`](.vibe/modules/web-server.md) — Fastify server + static frontend, exposes the reMarkable connection flow and the full nonogram list/create/get/update/delete API (configurable listen port via `PORT`)
 
 ## Observed patterns
 - npm workspaces monorepo (`packages/core`, `packages/web`); `core` has no Node-specific/browser-specific runtime dependency baked into its public API, so it stays a pure, testable domain layer
