@@ -1,5 +1,5 @@
 ---
-status: todo
+status: done
 depends_on: [003]
 ---
 # Web API: Nonogram SVG Preview Endpoint
