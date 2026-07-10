@@ -1,5 +1,5 @@
 ---
-status: todo
+status: done
 depends_on: [009, 010, 011, 013]
 ---
 # Web UI: Preview, PDF Download, and Send to reMarkable
