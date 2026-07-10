@@ -12,6 +12,7 @@
 		"build": "tsc -p tsconfig.json"
 	},
 	"dependencies": {
+		"pdf-lib": "^1.17.1",
 		"rmapi-js": "^11.0.0"
 	},
 	"devDependencies": {
