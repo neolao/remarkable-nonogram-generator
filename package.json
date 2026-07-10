@@ -1,0 +1,36 @@
+{
+	"name": "remarkable-nonogram-generator",
+	"version": "0.1.0",
+	"private": true,
+	"description": "Nonogram generator with a manual grid editor and automatic upload to reMarkable",
+	"type": "module",
+	"engines": {
+		"node": ">=22"
+	},
+	"workspaces": [
+		"packages/*"
+	],
+	"scripts": {
+		"test": "vitest run",
+		"lint": "biome check --write .",
+		"build": "npm run build --workspaces --if-present",
+		"web": "npm run dev --workspace packages/web"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/neolao/remarkable-nonogram-generator.git"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "ISC",
+	"bugs": {
+		"url": "https://github.com/neolao/remarkable-nonogram-generator/issues"
+	},
+	"homepage": "https://github.com/neolao/remarkable-nonogram-generator#readme",
+	"devDependencies": {
+		"@biomejs/biome": "^2.5.3",
+		"@types/node": "^26.1.1",
+		"typescript": "^7.0.2",
+		"vitest": "^4.1.10"
+	}
+}
