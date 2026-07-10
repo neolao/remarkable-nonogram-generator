@@ -12,6 +12,8 @@ export {
 	REMARKABLE_2_PAGE_HEIGHT_PX,
 	REMARKABLE_2_PAGE_WIDTH_PX,
 } from "./nonogram-grid.js";
+export type { RenderNonogramToSvgOptions } from "./nonogram-svg.js";
+export { renderNonogramToSvg } from "./nonogram-svg.js";
 export type {
 	RemarkableAuthOptions,
 	RemarkableSession,

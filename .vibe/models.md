@@ -21,4 +21,4 @@ Defined in: `packages/core/src/nonogram-grid.ts`
 | columnClues | number[][] | One clue-number list per column, left to right; `[0]` for an entirely empty column |
 Defined in: `packages/core/src/nonogram-clues.ts`
 
-No rendering or persistence model exists yet — those will be populated as later `/vibe:feature` items build them.
+No persistence model exists yet — that will be populated as later `/vibe:feature` items build it.
