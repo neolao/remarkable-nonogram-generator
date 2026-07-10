@@ -56,6 +56,86 @@ function buildGrid(width: number, height: number, fill: boolean): boolean[][] {
 	);
 }
 
+interface PdfLineOp {
+	x1: number;
+	y1: number;
+	x2: number;
+	y2: number;
+	lineWidth: number;
+}
+
+interface PdfRectOp {
+	x: number;
+	y: number;
+	width: number;
+	height: number;
+	borderWidth: number;
+}
+
+// A drawLine() block has no "cm" transform (unlike a rectangle block), sets a
+// line width via "<n> w", then a single "m ... l" segment ending in a lone
+// stroke operator "S" (a rectangle ends in "B", fill+stroke).
+function extractLineOps(pdfBytes: Uint8Array): PdfLineOp[] {
+	const blocks = decompressAllContentStreams(pdfBytes).join("\n").split(/^Q$/m);
+
+	return blocks.flatMap((block) => {
+		if (!/^S$/m.test(block) || / cm$/m.test(block)) {
+			return [];
+		}
+		const widthMatch = block.match(/^(-?[\d.]+) w$/m);
+		const moveMatches = Array.from(
+			block.matchAll(/^(-?[\d.]+) (-?[\d.]+) m$/gm),
+		);
+		const lineMatches = Array.from(
+			block.matchAll(/^(-?[\d.]+) (-?[\d.]+) l$/gm),
+		);
+		if (!widthMatch || moveMatches.length === 0 || lineMatches.length === 0) {
+			return [];
+		}
+		const start = moveMatches[0];
+		const end = lineMatches[lineMatches.length - 1];
+		return [
+			{
+				x1: Number(start[1]),
+				y1: Number(start[2]),
+				x2: Number(end[1]),
+				y2: Number(end[2]),
+				lineWidth: Number(widthMatch[1]),
+			},
+		];
+	});
+}
+
+// A drawRectangle() block places its origin via a "1 0 0 1 tx ty cm"
+// translation, then paths a rectangle from (0,0) to (rectWidth, rectHeight)
+// relative to that origin, and ends in "B" (fill+stroke).
+function extractRectOps(pdfBytes: Uint8Array): PdfRectOp[] {
+	const blocks = decompressAllContentStreams(pdfBytes).join("\n").split(/^Q$/m);
+
+	return blocks.flatMap((block) => {
+		if (!/^B$/m.test(block)) {
+			return [];
+		}
+		const cmMatch = block.match(/^1 0 0 1 (-?[\d.]+) (-?[\d.]+) cm$/m);
+		const widthMatch = block.match(/^(-?[\d.]+) w$/m);
+		const lineMatches = Array.from(
+			block.matchAll(/^(-?[\d.]+) (-?[\d.]+) l$/gm),
+		);
+		if (!cmMatch || !widthMatch || lineMatches.length < 2) {
+			return [];
+		}
+		return [
+			{
+				x: Number(cmMatch[1]),
+				y: Number(cmMatch[2]),
+				width: Number(lineMatches[1][1]),
+				height: Number(lineMatches[0][2]),
+				borderWidth: Number(widthMatch[1]),
+			},
+		];
+	});
+}
+
 describe("renderNonogramToPdf", () => {
 	it("produces a valid single-page PDF sized to the reMarkable 2 page dimensions", async () => {
 		const nonogram = createNonogram(3, 3, [
@@ -160,5 +240,100 @@ describe("renderNonogramToPdf", () => {
 		};
 
 		await expect(renderNonogramToPdf(invalidNonogram)).rejects.toThrow();
+	});
+
+	it("draws a thicker gridline only at the interior 5th row and 5th column, leaving other lines regular", async () => {
+		const width = 10;
+		const height = 8;
+		const nonogram = createNonogram(
+			width,
+			height,
+			buildGrid(width, height, false),
+		);
+
+		const pdfBytes = await renderNonogramToPdf(nonogram);
+
+		const rects = extractRectOps(pdfBytes);
+		const regularBorderWidth = rects[0].borderWidth;
+		const lines = extractLineOps(pdfBytes);
+
+		expect(lines).toHaveLength(2);
+		for (const line of lines) {
+			expect(line.lineWidth).toBeGreaterThan(regularBorderWidth);
+		}
+
+		const gridMinX = Math.min(...rects.map((rect) => rect.x));
+		const gridMaxX = Math.max(...rects.map((rect) => rect.x + rect.width));
+		const gridMinY = Math.min(...rects.map((rect) => rect.y));
+		const gridMaxY = Math.max(...rects.map((rect) => rect.y + rect.height));
+
+		const verticalLines = lines.filter((line) => line.x1 === line.x2);
+		const horizontalLines = lines.filter((line) => line.y1 === line.y2);
+
+		expect(verticalLines).toHaveLength(1);
+		expect(verticalLines[0].x1).toBeGreaterThan(gridMinX);
+		expect(verticalLines[0].x1).toBeLessThan(gridMaxX);
+
+		expect(horizontalLines).toHaveLength(1);
+		expect(horizontalLines[0].y1).toBeGreaterThan(gridMinY);
+		expect(horizontalLines[0].y1).toBeLessThan(gridMaxY);
+	});
+
+	it("draws no thick gridline when a grid dimension is smaller than 5", async () => {
+		const width = 4;
+		const height = 3;
+		const nonogram = createNonogram(
+			width,
+			height,
+			buildGrid(width, height, false),
+		);
+
+		const pdfBytes = await renderNonogramToPdf(nonogram);
+
+		expect(extractLineOps(pdfBytes)).toHaveLength(0);
+	});
+
+	it("never thickens the outer border, even when the total width/height is an exact multiple of 5", async () => {
+		const width = 10;
+		const height = 10;
+		const nonogram = createNonogram(
+			width,
+			height,
+			buildGrid(width, height, false),
+		);
+
+		const pdfBytes = await renderNonogramToPdf(nonogram);
+
+		const rects = extractRectOps(pdfBytes);
+		const gridMinX = Math.min(...rects.map((rect) => rect.x));
+		const gridMaxX = Math.max(...rects.map((rect) => rect.x + rect.width));
+		const gridMinY = Math.min(...rects.map((rect) => rect.y));
+		const gridMaxY = Math.max(...rects.map((rect) => rect.y + rect.height));
+
+		const lines = extractLineOps(pdfBytes);
+		const verticalLines = lines.filter((line) => line.x1 === line.x2);
+		const horizontalLines = lines.filter((line) => line.y1 === line.y2);
+
+		expect(verticalLines).toHaveLength(1);
+		expect(verticalLines[0].x1).not.toBeCloseTo(gridMinX, 1);
+		expect(verticalLines[0].x1).not.toBeCloseTo(gridMaxX, 1);
+
+		expect(horizontalLines).toHaveLength(1);
+		expect(horizontalLines[0].y1).not.toBeCloseTo(gridMinY, 1);
+		expect(horizontalLines[0].y1).not.toBeCloseTo(gridMaxY, 1);
+	});
+
+	it("draws no thick gridline when a dimension is exactly 5, since index 5 sits on the outer edge, not an interior line", async () => {
+		const width = 5;
+		const height = 5;
+		const nonogram = createNonogram(
+			width,
+			height,
+			buildGrid(width, height, false),
+		);
+
+		const pdfBytes = await renderNonogramToPdf(nonogram);
+
+		expect(extractLineOps(pdfBytes)).toHaveLength(0);
 	});
 });

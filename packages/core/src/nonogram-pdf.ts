@@ -20,6 +20,8 @@ export const REMARKABLE_2_PAGE_HEIGHT_PT =
 const PAGE_MARGIN_PT = 24;
 const STROKE_COLOR = rgb(0, 0, 0);
 const STROKE_WIDTH_PT = 1;
+const THICK_STROKE_WIDTH_PT = STROKE_WIDTH_PT * 3;
+const THICK_GRIDLINE_INTERVAL = 5;
 const FILL_COLOR_EMPTY = rgb(1, 1, 1);
 const TEXT_COLOR = rgb(0, 0, 0);
 const CLUE_FONT_SIZE_RATIO = 0.55;
@@ -130,6 +132,50 @@ function drawCells(
 	}
 }
 
+// Interior lines only, at indices that are a multiple of THICK_GRIDLINE_INTERVAL
+// and strictly between 0 and the grid's width/height: the outer border always
+// stays at the regular stroke width, regardless of the grid's total size.
+function drawThickGridlines(
+	page: PDFPage,
+	nonogram: Nonogram,
+	layout: NonogramPdfLayout,
+): void {
+	const { cellSize, leftOffset, leftMarginCells, topMarginCells } = layout;
+	const gridStartX = leftOffset + leftMarginCells * cellSize;
+	const gridEndX = gridStartX + nonogram.width * cellSize;
+	const gridStartYLocal = topMarginCells * cellSize;
+	const gridEndYLocal = gridStartYLocal + nonogram.height * cellSize;
+
+	for (
+		let column = THICK_GRIDLINE_INTERVAL;
+		column < nonogram.width;
+		column += THICK_GRIDLINE_INTERVAL
+	) {
+		const x = gridStartX + column * cellSize;
+		page.drawLine({
+			start: { x, y: toPdfRectY(layout, gridStartYLocal, 0) },
+			end: { x, y: toPdfRectY(layout, gridEndYLocal, 0) },
+			thickness: THICK_STROKE_WIDTH_PT,
+			color: STROKE_COLOR,
+		});
+	}
+
+	for (
+		let row = THICK_GRIDLINE_INTERVAL;
+		row < nonogram.height;
+		row += THICK_GRIDLINE_INTERVAL
+	) {
+		const localY = gridStartYLocal + row * cellSize;
+		const y = toPdfRectY(layout, localY, 0);
+		page.drawLine({
+			start: { x: gridStartX, y },
+			end: { x: gridEndX, y },
+			thickness: THICK_STROKE_WIDTH_PT,
+			color: STROKE_COLOR,
+		});
+	}
+}
+
 function drawClueLabel(
 	page: PDFPage,
 	font: PDFFont,
@@ -212,6 +258,7 @@ export async function renderNonogramToPdf(
 	]);
 
 	drawCells(page, nonogram, layout);
+	drawThickGridlines(page, nonogram, layout);
 	drawRowClues(page, font, rowClues, layout, fontSize);
 	drawColumnClues(page, font, columnClues, layout, fontSize);
 

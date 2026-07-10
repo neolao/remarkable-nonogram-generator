@@ -3,6 +3,8 @@ import type { Nonogram } from "./nonogram-grid.js";
 
 const DEFAULT_CELL_SIZE_PX = 20;
 const STROKE_WIDTH_PX = 1;
+const THICK_STROKE_WIDTH_PX = STROKE_WIDTH_PX * 3;
+const THICK_GRIDLINE_INTERVAL = 5;
 const FONT_SIZE_RATIO = 0.55;
 
 export interface RenderNonogramToSvgOptions {
@@ -80,6 +82,40 @@ function renderCells(
 	return markup;
 }
 
+// Interior lines only, at indices that are a multiple of THICK_GRIDLINE_INTERVAL
+// and strictly between 0 and the grid's width/height: the outer border always
+// stays at the regular stroke width, regardless of the grid's total size.
+function renderThickGridlines(
+	nonogram: Nonogram,
+	gridStartX: number,
+	gridStartY: number,
+	cellSizePx: number,
+): string {
+	const gridEndX = gridStartX + nonogram.width * cellSizePx;
+	const gridEndY = gridStartY + nonogram.height * cellSizePx;
+	let markup = "";
+
+	for (
+		let column = THICK_GRIDLINE_INTERVAL;
+		column < nonogram.width;
+		column += THICK_GRIDLINE_INTERVAL
+	) {
+		const x = gridStartX + column * cellSizePx;
+		markup += `<line x1="${x}" y1="${gridStartY}" x2="${x}" y2="${gridEndY}" stroke="black" stroke-width="${THICK_STROKE_WIDTH_PX}" />`;
+	}
+
+	for (
+		let row = THICK_GRIDLINE_INTERVAL;
+		row < nonogram.height;
+		row += THICK_GRIDLINE_INTERVAL
+	) {
+		const y = gridStartY + row * cellSizePx;
+		markup += `<line x1="${gridStartX}" y1="${y}" x2="${gridEndX}" y2="${y}" stroke="black" stroke-width="${THICK_STROKE_WIDTH_PX}" />`;
+	}
+
+	return markup;
+}
+
 export function renderNonogramToSvg(
 	nonogram: Nonogram,
 	options: RenderNonogramToSvgOptions = {},
@@ -101,6 +137,12 @@ export function renderNonogramToSvg(
 
 	const background = `<rect x="0" y="0" width="${width}" height="${height}" fill="white" />`;
 	const cells = renderCells(nonogram, gridStartX, gridStartY, cellSizePx);
+	const thickGridlines = renderThickGridlines(
+		nonogram,
+		gridStartX,
+		gridStartY,
+		cellSizePx,
+	);
 	const rowCluesMarkup = renderRowClues(
 		rowClues,
 		gridStartX,
@@ -116,5 +158,5 @@ export function renderNonogramToSvg(
 		fontSizePx,
 	);
 
-	return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">${background}${cells}${rowCluesMarkup}${columnCluesMarkup}</svg>`;
+	return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">${background}${cells}${thickGridlines}${rowCluesMarkup}${columnCluesMarkup}</svg>`;
 }

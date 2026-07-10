@@ -37,6 +37,35 @@ function countCellRects(svg: string): number {
 	return (svg.match(/<rect /g) || []).length - 1;
 }
 
+interface LineElement {
+	x1: number;
+	y1: number;
+	x2: number;
+	y2: number;
+	strokeWidth: number;
+}
+
+function extractThickLines(svg: string): LineElement[] {
+	const matches = svg.matchAll(
+		/<line x1="(-?\d+(?:\.\d+)?)" y1="(-?\d+(?:\.\d+)?)" x2="(-?\d+(?:\.\d+)?)" y2="(-?\d+(?:\.\d+)?)" stroke="[^"]*" stroke-width="(-?\d+(?:\.\d+)?)" \/>/g,
+	);
+	return Array.from(matches)
+		.map((match) => ({
+			x1: Number(match[1]),
+			y1: Number(match[2]),
+			x2: Number(match[3]),
+			y2: Number(match[4]),
+			strokeWidth: Number(match[5]),
+		}))
+		.filter((line) => line.strokeWidth > 1);
+}
+
+function emptyCells(width: number, height: number): boolean[][] {
+	return Array.from({ length: height }, () =>
+		Array.from({ length: width }, () => false),
+	);
+}
+
 describe("renderNonogramToSvg", () => {
 	it("renders one rect per grid cell, with filled cells visually distinct from empty ones", () => {
 		const cells = [
@@ -138,5 +167,79 @@ describe("renderNonogramToSvg", () => {
 
 		expect(() => renderNonogramToSvg(nonogram, { cellSizePx: 0 })).toThrow();
 		expect(() => renderNonogramToSvg(nonogram, { cellSizePx: -10 })).toThrow();
+	});
+
+	it("draws a thicker gridline only at the interior 5th row and 5th column, leaving other lines regular", () => {
+		const width = 10;
+		const height = 8;
+		const cellSizePx = 20;
+		const nonogram = createNonogram(width, height, emptyCells(width, height));
+
+		const svg = renderNonogramToSvg(nonogram, { cellSizePx });
+
+		const { width: totalWidth, height: totalHeight } = extractViewBoxSize(svg);
+		const gridStartX = totalWidth - width * cellSizePx;
+		const gridStartY = totalHeight - height * cellSizePx;
+
+		const thickLines = extractThickLines(svg);
+		const verticalOffsets = thickLines
+			.filter((line) => line.x1 === line.x2)
+			.map((line) => line.x1 - gridStartX);
+		const horizontalOffsets = thickLines
+			.filter((line) => line.y1 === line.y2)
+			.map((line) => line.y1 - gridStartY);
+
+		expect(verticalOffsets).toEqual([5 * cellSizePx]);
+		expect(horizontalOffsets).toEqual([5 * cellSizePx]);
+	});
+
+	it("draws no thick gridline when a grid dimension is smaller than 5", () => {
+		const width = 4;
+		const height = 3;
+		const nonogram = createNonogram(width, height, emptyCells(width, height));
+
+		const svg = renderNonogramToSvg(nonogram, { cellSizePx: 20 });
+
+		expect(extractThickLines(svg)).toHaveLength(0);
+	});
+
+	it("never thickens the outer border, even when the total width/height is an exact multiple of 5", () => {
+		const width = 10;
+		const height = 10;
+		const cellSizePx = 20;
+		const nonogram = createNonogram(width, height, emptyCells(width, height));
+
+		const svg = renderNonogramToSvg(nonogram, { cellSizePx });
+
+		const { width: totalWidth, height: totalHeight } = extractViewBoxSize(svg);
+		const gridStartX = totalWidth - width * cellSizePx;
+		const gridStartY = totalHeight - height * cellSizePx;
+		const gridEndX = gridStartX + width * cellSizePx;
+		const gridEndY = gridStartY + height * cellSizePx;
+
+		const thickLines = extractThickLines(svg);
+		const verticalOffsets = thickLines
+			.filter((line) => line.x1 === line.x2)
+			.map((line) => line.x1);
+		const horizontalOffsets = thickLines
+			.filter((line) => line.y1 === line.y2)
+			.map((line) => line.y1);
+
+		expect(verticalOffsets).not.toContain(gridStartX);
+		expect(verticalOffsets).not.toContain(gridEndX);
+		expect(verticalOffsets).toEqual([gridStartX + 5 * cellSizePx]);
+		expect(horizontalOffsets).not.toContain(gridStartY);
+		expect(horizontalOffsets).not.toContain(gridEndY);
+		expect(horizontalOffsets).toEqual([gridStartY + 5 * cellSizePx]);
+	});
+
+	it("draws no thick gridline when a dimension is exactly 5, since index 5 sits on the outer edge, not an interior line", () => {
+		const width = 5;
+		const height = 5;
+		const nonogram = createNonogram(width, height, emptyCells(width, height));
+
+		const svg = renderNonogramToSvg(nonogram, { cellSizePx: 20 });
+
+		expect(extractThickLines(svg)).toHaveLength(0);
 	});
 });
