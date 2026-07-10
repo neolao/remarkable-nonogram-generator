@@ -38,6 +38,30 @@ function computeClientNonogramClues(cells) {
 	return { rowClues, columnClues };
 }
 
+// Mirrors the rules tested in packages/web/src/nonogram-save-request.ts;
+// duplicated here because this static page runs unmodified in the browser,
+// with no build step available to import the compiled/tested module.
+function buildNonogramSaveRequest(currentId, name, nonogram) {
+	const trimmedName = name.trim();
+	if (!trimmedName) {
+		return { ok: false, error: "A name is required to save this nonogram" };
+	}
+
+	const body = { name: trimmedName, nonogram };
+
+	if (currentId) {
+		return {
+			ok: true,
+			request: { method: "PUT", url: `/api/nonograms/${currentId}`, body },
+		};
+	}
+
+	return {
+		ok: true,
+		request: { method: "POST", url: "/api/nonograms", body },
+	};
+}
+
 function initEditor() {
 	const statusElement = document.getElementById("editor-status");
 	const errorElement = document.getElementById("editor-error");
@@ -50,9 +74,15 @@ function initEditor() {
 	const gridElement = document.getElementById("nonogram-grid");
 	const rowCluesElement = document.getElementById("row-clues");
 	const columnCluesElement = document.getElementById("column-clues");
+	const editorActions = document.getElementById("editor-actions");
+	const nameInput = document.getElementById("nonogram-name");
+	const saveButton = document.getElementById("save-button");
+	const saveError = document.getElementById("save-error");
+	const saveStatus = document.getElementById("save-status");
 
 	const params = new URLSearchParams(window.location.search);
-	const id = params.get("id");
+	let currentId = params.get("id");
+	const grid = { width: 0, height: 0, cells: [] };
 
 	const renderClues = (width, height, cells) => {
 		const { rowClues, columnClues } = computeClientNonogramClues(cells);
@@ -77,6 +107,10 @@ function initEditor() {
 	};
 
 	const renderGrid = (width, height, cells) => {
+		grid.width = width;
+		grid.height = height;
+		grid.cells = cells;
+
 		gridElement.innerHTML = "";
 		gridElement.style.setProperty("--grid-columns", String(width));
 		gridElement.style.setProperty("--grid-rows", String(height));
@@ -109,6 +143,8 @@ function initEditor() {
 			? `Editing "${name}" (${nonogram.width} × ${nonogram.height})`
 			: `New nonogram (${nonogram.width} × ${nonogram.height})`;
 		sizeSection.style.display = "none";
+		nameInput.value = name ?? "";
+		editorActions.style.display = "flex";
 		renderGrid(
 			nonogram.width,
 			nonogram.height,
@@ -116,8 +152,42 @@ function initEditor() {
 		);
 	};
 
+	const handleSave = async () => {
+		saveError.textContent = "";
+		saveStatus.textContent = "";
+
+		const result = buildNonogramSaveRequest(currentId, nameInput.value, {
+			width: grid.width,
+			height: grid.height,
+			cells: grid.cells,
+		});
+
+		if (!result.ok) {
+			saveError.textContent = result.error;
+			return;
+		}
+
+		const response = await fetch(result.request.url, {
+			method: result.request.method,
+			headers: { "content-type": "application/json" },
+			body: JSON.stringify(result.request.body),
+		});
+
+		if (!response.ok) {
+			const body = await response.json();
+			saveError.textContent = body.error ?? "Failed to save this nonogram";
+			return;
+		}
+
+		const saved = await response.json();
+		currentId = saved.id;
+		saveStatus.textContent = "Saved.";
+	};
+
+	saveButton.addEventListener("click", handleSave);
+
 	const loadExisting = async () => {
-		const response = await fetch(`/api/nonograms/${id}`);
+		const response = await fetch(`/api/nonograms/${currentId}`);
 
 		if (!response.ok) {
 			statusElement.textContent = "";
@@ -150,7 +220,7 @@ function initEditor() {
 		showGrid(null, { width, height, cells });
 	};
 
-	if (id) {
+	if (currentId) {
 		sizeSection.style.display = "none";
 		loadExisting();
 	} else {

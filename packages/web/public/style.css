@@ -217,6 +217,32 @@ button:disabled {
 	min-height: 1.25rem;
 }
 
+.editor-actions {
+	display: flex;
+	align-items: flex-end;
+	gap: 1rem;
+	flex-wrap: wrap;
+	margin-bottom: 1rem;
+}
+
+#nonogram-name {
+	width: 14rem;
+}
+
+#save-error {
+	margin: 0.5rem 0 0;
+	color: var(--color-danger);
+	font-weight: 600;
+	min-height: 1.25rem;
+}
+
+#save-status {
+	margin: 0.5rem 0 0;
+	color: var(--color-accent);
+	font-weight: 600;
+	min-height: 1.25rem;
+}
+
 .nonogram-board {
 	display: none;
 	grid-template-areas:
