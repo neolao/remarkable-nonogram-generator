@@ -1,5 +1,5 @@
 ---
-status: todo
+status: done
 depends_on: [001, 007]
 ---
 # Web UI: Manual Grid Editor
