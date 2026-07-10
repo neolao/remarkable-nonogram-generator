@@ -17,3 +17,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The web app now exposes an endpoint to list every saved nonogram with its name, size, and last-modified date, laying the groundwork for the upcoming listing page
 - Nonograms can now be created, fetched by id, and updated (name and/or grid) through the web app's API, with a clear error returned when the grid is invalid
 - Saved nonograms can now be deleted through the web app's API
+- The web app can now render a live SVG preview of any grid through its API, even before it has been saved

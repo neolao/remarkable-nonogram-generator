@@ -2,11 +2,16 @@ import {
 	createNonogram,
 	type Nonogram,
 	type NonogramStore,
+	renderNonogramToSvg,
 } from "@remarkable-nonogram-generator/core";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 
 interface SaveNonogramRequestBody {
 	name?: string;
+	nonogram?: Nonogram;
+}
+
+interface PreviewNonogramRequestBody {
 	nonogram?: Nonogram;
 }
 
@@ -36,6 +41,22 @@ async function handleCreate(
 	});
 	reply.code(201);
 	return saved;
+}
+
+async function handlePreview(
+	request: FastifyRequest<{ Body: PreviewNonogramRequestBody }>,
+	reply: FastifyReply,
+) {
+	let nonogram: Nonogram;
+	try {
+		nonogram = validateNonogram(request.body?.nonogram);
+	} catch (error) {
+		reply.code(400);
+		return { error: (error as Error).message };
+	}
+
+	reply.type("image/svg+xml");
+	return renderNonogramToSvg(nonogram);
 }
 
 async function handleGet(
@@ -103,6 +124,10 @@ export function registerNonogramRoutes(
 	app.post<{ Body: SaveNonogramRequestBody }>(
 		"/api/nonograms",
 		(request, reply) => handleCreate(store, request, reply),
+	);
+	app.post<{ Body: PreviewNonogramRequestBody }>(
+		"/api/nonograms/preview",
+		(request, reply) => handlePreview(request, reply),
 	);
 	app.get<{ Params: { id: string } }>("/api/nonograms/:id", (request, reply) =>
 		handleGet(store, request, reply),
