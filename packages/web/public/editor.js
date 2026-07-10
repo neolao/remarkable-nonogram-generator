@@ -86,6 +86,42 @@ function buildNonogramSaveRequest(currentId, name, nonogram) {
 	};
 }
 
+// Mirrors the rules tested in packages/web/src/remarkable-folder-cookie.ts;
+// duplicated here because this static page runs unmodified in the browser,
+// with no build step available to import the compiled/tested module.
+const REMARKABLE_FOLDER_COOKIE_NAME = "remarkable-folder";
+const REMARKABLE_FOLDER_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 365;
+
+function buildRemarkableFolderCookieAssignment(folder) {
+	const trimmedFolder = folder.trim();
+
+	if (!trimmedFolder) {
+		return `${REMARKABLE_FOLDER_COOKIE_NAME}=; path=/; max-age=0`;
+	}
+
+	return `${REMARKABLE_FOLDER_COOKIE_NAME}=${encodeURIComponent(trimmedFolder)}; path=/; max-age=${REMARKABLE_FOLDER_COOKIE_MAX_AGE_SECONDS}`;
+}
+
+function readRemarkableFolderCookie(cookieHeader) {
+	const cookiePrefix = `${REMARKABLE_FOLDER_COOKIE_NAME}=`;
+	const match = cookieHeader
+		.split(";")
+		.map((part) => part.trim())
+		.find((part) => part.startsWith(cookiePrefix));
+
+	if (!match) {
+		return "";
+	}
+
+	const rawValue = match.slice(cookiePrefix.length);
+
+	try {
+		return decodeURIComponent(rawValue);
+	} catch {
+		return "";
+	}
+}
+
 function initEditor() {
 	const statusElement = document.getElementById("editor-status");
 	const errorElement = document.getElementById("editor-error");
@@ -118,6 +154,8 @@ function initEditor() {
 	let currentId = params.get("id");
 	let lastDownloadObjectUrl = null;
 	const grid = { width: 0, height: 0, cells: [] };
+
+	remarkableFolderInput.value = readRemarkableFolderCookie(document.cookie);
 
 	const renderClues = (width, height, cells) => {
 		const { rowClues, columnClues } = computeClientNonogramClues(cells);
@@ -276,6 +314,11 @@ function initEditor() {
 			sendStatus.textContent = result.error;
 			return;
 		}
+
+		// biome-ignore lint/suspicious/noDocumentCookie: Cookie Store API isn't supported everywhere and this static page has no build step for a polyfill
+		document.cookie = buildRemarkableFolderCookieAssignment(
+			remarkableFolderInput.value,
+		);
 
 		sendStatus.textContent = "Sending to reMarkable...";
 		pairingSection.style.display = "none";

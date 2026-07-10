@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The editor page now lets you name and save your drawing: a new nonogram is created on first save, further saves on the same drawing update it in place instead of creating a duplicate, and a validation message appears if you try to save without a name
 - The editor page now shows a live preview image of your drawing, lets you download it as a PDF, and lets you send it straight to your paired reMarkable tablet with an optional destination folder; sending prompts you to save first if the drawing hasn't been saved yet, and reuses the existing pairing screen if your tablet isn't connected yet
 - The live preview and the downloaded/sent PDF now draw a thicker line every 5 rows and every 5 columns, making larger grids easier to scan and count, similar to sudoku block grouping
+- The editor page now remembers the last reMarkable destination folder you sent to, pre-filling it automatically on your next visit; clearing the field before sending forgets it again
 
 ### Fixed
 
