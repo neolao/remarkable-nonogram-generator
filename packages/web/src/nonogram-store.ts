@@ -54,7 +54,14 @@ export function createFileNonogramStore(directoryPath: string): NonogramStore {
 
 			const jsonFiles = entries.filter((entry) => entry.endsWith(".json"));
 			const saved = await Promise.all(
-				jsonFiles.map((entry) => readSavedNonogram(join(directoryPath, entry))),
+				jsonFiles.map(async (entry) => {
+					try {
+						return await readSavedNonogram(join(directoryPath, entry));
+					} catch (error) {
+						if (error instanceof SyntaxError) return null;
+						throw error;
+					}
+				}),
 			);
 
 			return saved

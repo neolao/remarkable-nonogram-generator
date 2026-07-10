@@ -1,4 +1,4 @@
-import { mkdtemp, rm, stat, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { Nonogram } from "@remarkable-nonogram-generator/core";
@@ -142,6 +142,30 @@ describe("createFileNonogramStore", () => {
 		const store = createFileNonogramStore(join(workDir, "nonograms"));
 
 		await expect(store.delete("missing-id")).resolves.toBeUndefined();
+	});
+
+	it("skips a corrupted JSON file when listing instead of failing the whole listing", async () => {
+		const directoryPath = join(workDir, "nonograms");
+		const store = createFileNonogramStore(directoryPath);
+		const saved = await store.save({
+			name: "First puzzle",
+			nonogram: sampleNonogram,
+		});
+		await mkdir(directoryPath, { recursive: true });
+		await writeFile(join(directoryPath, "corrupt.json"), "{ not valid json");
+
+		const summaries = await store.list();
+
+		expect(summaries).toEqual([
+			{
+				id: saved.id,
+				name: "First puzzle",
+				width: 2,
+				height: 2,
+				createdAt: saved.createdAt,
+				updatedAt: saved.updatedAt,
+			},
+		]);
 	});
 
 	it("rejects an id containing path separators to prevent escaping the store directory", async () => {
