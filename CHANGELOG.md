@@ -18,3 +18,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Nonograms can now be created, fetched by id, and updated (name and/or grid) through the web app's API, with a clear error returned when the grid is invalid
 - Saved nonograms can now be deleted through the web app's API
 - The web app can now render a live SVG preview of any grid through its API, even before it has been saved
+- The web app can now generate a downloadable PDF for any grid through its API, ready to print or send to a reMarkable tablet

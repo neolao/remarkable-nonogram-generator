@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
 	type Nonogram,
+	renderNonogramToPdf,
 	renderNonogramToSvg,
 } from "@remarkable-nonogram-generator/core";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -314,6 +315,92 @@ describe("POST /api/nonograms/preview", () => {
 		const response = await app.inject({
 			method: "POST",
 			url: "/api/nonograms/preview",
+			payload: {},
+		});
+
+		expect(response.statusCode).toBe(400);
+		expect(response.json().error).toMatch(/required/i);
+	});
+});
+
+describe("POST /api/nonograms/generate", () => {
+	it("returns 200 with the rendered PDF for a valid grid", async () => {
+		const app = buildServer({ credentialsPath, nonogramsPath });
+
+		const response = await app.inject({
+			method: "POST",
+			url: "/api/nonograms/generate",
+			payload: { nonogram: sampleNonogram },
+		});
+
+		expect(response.statusCode).toBe(200);
+		expect(response.headers["content-type"]).toMatch(/application\/pdf/);
+		expect(response.rawPayload.length).toBeGreaterThan(0);
+		expect(response.rawPayload).toEqual(
+			Buffer.from(await renderNonogramToPdf(sampleNonogram)),
+		);
+	});
+
+	it("returns 200 with a valid PDF for a minimal 1x1 grid", async () => {
+		const app = buildServer({ credentialsPath, nonogramsPath });
+		const tinyNonogram: Nonogram = { width: 1, height: 1, cells: [[true]] };
+
+		const response = await app.inject({
+			method: "POST",
+			url: "/api/nonograms/generate",
+			payload: { nonogram: tinyNonogram },
+		});
+
+		expect(response.statusCode).toBe(200);
+		expect(response.rawPayload).toEqual(
+			Buffer.from(await renderNonogramToPdf(tinyNonogram)),
+		);
+	});
+
+	it("returns 200 with a valid PDF for an entirely empty grid", async () => {
+		const app = buildServer({ credentialsPath, nonogramsPath });
+		const emptyNonogram: Nonogram = {
+			width: 2,
+			height: 2,
+			cells: [
+				[false, false],
+				[false, false],
+			],
+		};
+
+		const response = await app.inject({
+			method: "POST",
+			url: "/api/nonograms/generate",
+			payload: { nonogram: emptyNonogram },
+		});
+
+		expect(response.statusCode).toBe(200);
+		expect(response.rawPayload).toEqual(
+			Buffer.from(await renderNonogramToPdf(emptyNonogram)),
+		);
+	});
+
+	it("returns 400 with a clear error message when the grid dimensions are invalid", async () => {
+		const app = buildServer({ credentialsPath, nonogramsPath });
+
+		const response = await app.inject({
+			method: "POST",
+			url: "/api/nonograms/generate",
+			payload: {
+				nonogram: { width: 2, height: 2, cells: [[true, false]] },
+			},
+		});
+
+		expect(response.statusCode).toBe(400);
+		expect(response.json().error).toMatch(/dimensions/i);
+	});
+
+	it("returns 400 with a clear error message when the grid is missing from the request body", async () => {
+		const app = buildServer({ credentialsPath, nonogramsPath });
+
+		const response = await app.inject({
+			method: "POST",
+			url: "/api/nonograms/generate",
 			payload: {},
 		});
 
