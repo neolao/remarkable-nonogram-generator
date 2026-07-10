@@ -5,7 +5,7 @@
 **Code:** `authenticate()` in `packages/core/src/remarkable-auth.ts`
 
 ## Nonogram
-**Definition:** A picture logic puzzle (also known as picross) solved by filling grid cells according to numeric clues per row/column. In this project, the grid is drawn manually by the user rather than generated. The grid data model and clue computation exist; rendering and persistence are not yet implemented.
+**Definition:** A picture logic puzzle (also known as picross) solved by filling grid cells according to numeric clues per row/column. In this project, a nonogram's grid can be drawn manually by the user or imported from an external source; clues are always (re)computed from the grid, never trusted from the source.
 **Code:** `createNonogram()`, `Nonogram` in `packages/core/src/nonogram-grid.ts`
 
 ## Clue

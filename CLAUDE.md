@@ -5,7 +5,7 @@
 
 ## Project overview
 
-Nonogram (picross) web application. The user draws the grid manually cell by cell in the browser; row/column clues are computed automatically from the drawing. No random puzzle generator, no CLI — a web UI only, with a button to send the resulting PDF straight to a reMarkable tablet.
+Nonogram (picross) web application. Nonograms can be drawn manually cell by cell in the browser (row/column clues computed automatically from the drawing) or imported from an external source. No CLI — a web UI only, with a button to send the resulting PDF straight to a reMarkable tablet.
 
 **Stack:** Node.js / TypeScript, npm workspaces (monorepo), Fastify, Vitest, Biome
 **Type:** Full-stack (web API/server + shared core, no CLI)
@@ -93,7 +93,7 @@ If tests or lint fail:
 - Never skip tests to meet a deadline — fix the code instead
 - Style is enforced by tooling, not by convention — always run `npm run lint` before presenting results
 - The `core` package remains the single place implementing nonogram domain logic, PDF/SVG rendering, and reMarkable Cloud integration — the web UI stays a plain consumer (no duplicated business logic)
-- No random puzzle generator: nonograms are created manually by the user drawing the grid; clues are always derived automatically from that drawing, never the other way around
+- When importing nonograms from an external source, always derive/validate row/column clues the same way as for manually-drawn grids — never trust clues supplied by the source as-is
 - When starting the web dev server (`packages/web`, `npm run web`) to test a change in the browser, always stop it once testing is done — never leave it running in the background after presenting results
 
 ## Review agents
