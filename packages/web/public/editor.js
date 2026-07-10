@@ -4,6 +4,40 @@ function createEmptyCells(width, height) {
 	);
 }
 
+// Mirrors the rules tested in packages/web/src/nonogram-client-clues.ts;
+// duplicated here because this static page runs unmodified in the browser,
+// with no build step available to import the compiled/tested module.
+function computeLineClues(line) {
+	const clues = [];
+	let currentRunLength = 0;
+
+	for (const cell of line) {
+		if (cell) {
+			currentRunLength += 1;
+			continue;
+		}
+		if (currentRunLength > 0) {
+			clues.push(currentRunLength);
+			currentRunLength = 0;
+		}
+	}
+	if (currentRunLength > 0) {
+		clues.push(currentRunLength);
+	}
+
+	return clues.length > 0 ? clues : [0];
+}
+
+function computeClientNonogramClues(cells) {
+	const width = cells[0]?.length ?? 0;
+	const rowClues = cells.map((row) => computeLineClues(row));
+	const columnClues = Array.from({ length: width }, (_, columnIndex) =>
+		computeLineClues(cells.map((row) => row[columnIndex])),
+	);
+
+	return { rowClues, columnClues };
+}
+
 function initEditor() {
 	const statusElement = document.getElementById("editor-status");
 	const errorElement = document.getElementById("editor-error");
@@ -12,10 +46,35 @@ function initEditor() {
 	const heightInput = document.getElementById("grid-height");
 	const sizeSubmit = document.getElementById("size-submit");
 	const sizeError = document.getElementById("size-error");
+	const boardElement = document.getElementById("nonogram-board");
 	const gridElement = document.getElementById("nonogram-grid");
+	const rowCluesElement = document.getElementById("row-clues");
+	const columnCluesElement = document.getElementById("column-clues");
 
 	const params = new URLSearchParams(window.location.search);
 	const id = params.get("id");
+
+	const renderClues = (width, height, cells) => {
+		const { rowClues, columnClues } = computeClientNonogramClues(cells);
+
+		rowCluesElement.style.setProperty("--grid-rows", String(height));
+		rowCluesElement.innerHTML = "";
+		for (const clues of rowClues) {
+			const rowClueElement = document.createElement("div");
+			rowClueElement.className = "row-clue";
+			rowClueElement.textContent = clues.join(" ");
+			rowCluesElement.append(rowClueElement);
+		}
+
+		columnCluesElement.style.setProperty("--grid-columns", String(width));
+		columnCluesElement.innerHTML = "";
+		for (const clues of columnClues) {
+			const columnClueElement = document.createElement("div");
+			columnClueElement.className = "column-clue";
+			columnClueElement.textContent = clues.join("\n");
+			columnCluesElement.append(columnClueElement);
+		}
+	};
 
 	const renderGrid = (width, height, cells) => {
 		gridElement.innerHTML = "";
@@ -34,13 +93,15 @@ function initEditor() {
 					cells[row][column] = !cells[row][column];
 					cell.classList.toggle("filled", cells[row][column]);
 					cell.setAttribute("aria-pressed", String(cells[row][column]));
+					renderClues(width, height, cells);
 				});
 
 				gridElement.append(cell);
 			}
 		}
 
-		gridElement.classList.add("visible");
+		renderClues(width, height, cells);
+		boardElement.classList.add("visible");
 	};
 
 	const showGrid = (name, nonogram) => {

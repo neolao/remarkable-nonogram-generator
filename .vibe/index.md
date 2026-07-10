@@ -6,7 +6,7 @@
 - [`modules/nonogram-domain.md`](.vibe/modules/nonogram-domain.md) — core nonogram grid data model (filled/empty cells) and row/column clue computation, validated against reMarkable 2 page size constants
 - [`modules/nonogram-rendering.md`](.vibe/modules/nonogram-rendering.md) — renders a nonogram grid and its clues to SVG (live preview) and to a reMarkable-2-sized PDF (download/send)
 - [`modules/nonogram-persistence.md`](.vibe/modules/nonogram-persistence.md) — file-based save/list/load/delete of nonograms, one JSON file per id, backs the full `/api/nonograms` list/create/get/update/delete routes
-- [`modules/web-server.md`](.vibe/modules/web-server.md) — Fastify server + static frontend, exposes the reMarkable connection/send flow, the full nonogram list/create/get/update/delete API, stateless SVG preview / PDF generation endpoints, a home page listing/creating/deleting saved nonograms, and a manual grid editor page (configurable listen port via `PORT`)
+- [`modules/web-server.md`](.vibe/modules/web-server.md) — Fastify server + static frontend, exposes the reMarkable connection/send flow, the full nonogram list/create/get/update/delete API, stateless SVG preview / PDF generation endpoints, a home page listing/creating/deleting saved nonograms, and a manual grid editor page with a live client-side row/column clue display (configurable listen port via `PORT`)
 
 ## Observed patterns
 - npm workspaces monorepo (`packages/core`, `packages/web`); `core` has no Node-specific/browser-specific runtime dependency baked into its public API, so it stays a pure, testable domain layer
@@ -15,6 +15,7 @@
 - Style and formatting enforced by Biome (`npm run lint`)
 - Fastify routes are grouped by concern into small `register*Routes(app, ...)` functions (see `remarkable-routes.ts`) rather than one monolithic route file
 - Frontend is plain static HTML/CSS/JS (no framework, no build step) served directly by Fastify's `@fastify/static`
+- Logic needed both server-side and client-side (e.g. clue computation) is written once as a tested TS module under `packages/web/src/`, then hand-duplicated as plain JS directly into the relevant `public/*.js` file with a comment noting the mirrored source, since the static frontend has no build step to import it
 
 ## Other context files
 - [`models.md`](.vibe/models.md) — data models
