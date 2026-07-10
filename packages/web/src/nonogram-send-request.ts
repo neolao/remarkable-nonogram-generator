@@ -1,7 +1,10 @@
 export interface NonogramSendRequest {
 	readonly method: "POST";
 	readonly url: string;
-	readonly body: { readonly folder?: string };
+	readonly body: {
+		readonly folder?: string;
+		readonly includeSolution?: boolean;
+	};
 }
 
 export type NonogramSendRequestResult =
@@ -11,6 +14,7 @@ export type NonogramSendRequestResult =
 export function buildNonogramSendRequest(
 	currentId: string | null,
 	folder: string,
+	includeSolution = false,
 ): NonogramSendRequestResult {
 	if (!currentId) {
 		return {
@@ -20,7 +24,10 @@ export function buildNonogramSendRequest(
 	}
 
 	const trimmedFolder = folder.trim();
-	const body = trimmedFolder ? { folder: trimmedFolder } : {};
+	const body = {
+		...(trimmedFolder ? { folder: trimmedFolder } : {}),
+		...(includeSolution ? { includeSolution: true } : {}),
+	};
 
 	return {
 		ok: true,

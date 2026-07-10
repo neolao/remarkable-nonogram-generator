@@ -18,6 +18,7 @@ interface PreviewNonogramRequestBody {
 
 interface GenerateNonogramRequestBody {
 	nonogram?: Nonogram;
+	includeSolution?: boolean;
 }
 
 function validateNonogram(nonogram: Nonogram | undefined): Nonogram {
@@ -76,7 +77,9 @@ async function handleGenerate(
 		return { error: (error as Error).message };
 	}
 
-	const pdfBytes = await renderNonogramToPdf(nonogram);
+	const pdfBytes = await renderNonogramToPdf(nonogram, {
+		includeSolution: request.body?.includeSolution,
+	});
 	reply.type("application/pdf");
 	return Buffer.from(pdfBytes);
 }

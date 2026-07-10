@@ -23,8 +23,13 @@ const STROKE_WIDTH_PT = 1;
 const THICK_STROKE_WIDTH_PT = STROKE_WIDTH_PT * 2;
 const THICK_GRIDLINE_INTERVAL = 5;
 const FILL_COLOR_EMPTY = rgb(1, 1, 1);
+const FILL_COLOR_FILLED = rgb(0, 0, 0);
 const TEXT_COLOR = rgb(0, 0, 0);
 const CLUE_FONT_SIZE_RATIO = 0.55;
+
+export interface RenderNonogramToPdfOptions {
+	includeSolution?: boolean;
+}
 
 type Clues = ReadonlyArray<ReadonlyArray<number>>;
 
@@ -102,13 +107,15 @@ function toPdfRectY(
 	return REMARKABLE_2_PAGE_HEIGHT_PT - layout.topOffset - localY - height;
 }
 
-// The exported PDF is the blank puzzle to solve on the device, not the
-// drawn solution: every cell is always rendered empty regardless of
-// nonogram.cells, which is only used to compute the clues below.
+// The first page is always the blank puzzle to solve on the device: every
+// cell is rendered empty regardless of nonogram.cells. When a solution page
+// is requested (see renderNonogramToPdf), it reuses this same function with
+// showSolution=true so filled cells render black, matching the SVG preview.
 function drawCells(
 	page: PDFPage,
 	nonogram: Nonogram,
 	layout: NonogramPdfLayout,
+	showSolution: boolean,
 ): void {
 	const { cellSize, leftOffset, leftMarginCells, topMarginCells } = layout;
 	const gridStartX = leftOffset + leftMarginCells * cellSize;
@@ -118,13 +125,14 @@ function drawCells(
 		for (let column = 0; column < nonogram.width; column++) {
 			const x = gridStartX + column * cellSize;
 			const localY = gridStartYLocal + row * cellSize;
+			const isFilled = showSolution && nonogram.cells[row][column];
 
 			page.drawRectangle({
 				x,
 				y: toPdfRectY(layout, localY, cellSize),
 				width: cellSize,
 				height: cellSize,
-				color: FILL_COLOR_EMPTY,
+				color: isFilled ? FILL_COLOR_FILLED : FILL_COLOR_EMPTY,
 				borderColor: STROKE_COLOR,
 				borderWidth: STROKE_WIDTH_PT,
 			});
@@ -239,8 +247,30 @@ function drawColumnClues(
 	});
 }
 
+function drawNonogramPage(
+	document: PDFDocument,
+	font: PDFFont,
+	nonogram: Nonogram,
+	rowClues: Clues,
+	columnClues: Clues,
+	layout: NonogramPdfLayout,
+	fontSize: number,
+	showSolution: boolean,
+): void {
+	const page = document.addPage([
+		REMARKABLE_2_PAGE_WIDTH_PT,
+		REMARKABLE_2_PAGE_HEIGHT_PT,
+	]);
+
+	drawCells(page, nonogram, layout, showSolution);
+	drawThickGridlines(page, nonogram, layout);
+	drawRowClues(page, font, rowClues, layout, fontSize);
+	drawColumnClues(page, font, columnClues, layout, fontSize);
+}
+
 export async function renderNonogramToPdf(
 	nonogram: Nonogram,
+	options: RenderNonogramToPdfOptions = {},
 ): Promise<Uint8Array> {
 	validateNonogram(nonogram);
 
@@ -252,15 +282,30 @@ export async function renderNonogramToPdf(
 	document.setCreationDate(new Date(0));
 	document.setModificationDate(new Date(0));
 	const font = await document.embedFont(StandardFonts.Helvetica);
-	const page = document.addPage([
-		REMARKABLE_2_PAGE_WIDTH_PT,
-		REMARKABLE_2_PAGE_HEIGHT_PT,
-	]);
 
-	drawCells(page, nonogram, layout);
-	drawThickGridlines(page, nonogram, layout);
-	drawRowClues(page, font, rowClues, layout, fontSize);
-	drawColumnClues(page, font, columnClues, layout, fontSize);
+	drawNonogramPage(
+		document,
+		font,
+		nonogram,
+		rowClues,
+		columnClues,
+		layout,
+		fontSize,
+		false,
+	);
+
+	if (options.includeSolution) {
+		drawNonogramPage(
+			document,
+			font,
+			nonogram,
+			rowClues,
+			columnClues,
+			layout,
+			fontSize,
+			true,
+		);
+	}
 
 	return document.save();
 }

@@ -41,7 +41,7 @@ function computeClientNonogramClues(cells) {
 // Mirrors the rules tested in packages/web/src/nonogram-send-request.ts;
 // duplicated here because this static page runs unmodified in the browser,
 // with no build step available to import the compiled/tested module.
-function buildNonogramSendRequest(currentId, folder) {
+function buildNonogramSendRequest(currentId, folder, includeSolution = false) {
 	if (!currentId) {
 		return {
 			ok: false,
@@ -50,7 +50,10 @@ function buildNonogramSendRequest(currentId, folder) {
 	}
 
 	const trimmedFolder = folder.trim();
-	const body = trimmedFolder ? { folder: trimmedFolder } : {};
+	const body = {
+		...(trimmedFolder ? { folder: trimmedFolder } : {}),
+		...(includeSolution ? { includeSolution: true } : {}),
+	};
 
 	return {
 		ok: true,
@@ -142,6 +145,7 @@ function initEditor() {
 	const previewCard = document.getElementById("preview-card");
 	const previewImage = document.getElementById("nonogram-preview");
 	const downloadButton = document.getElementById("download-button");
+	const includeSolutionCheckbox = document.getElementById("include-solution");
 	const remarkableFolderInput = document.getElementById("remarkable-folder");
 	const sendButton = document.getElementById("send-button");
 	const sendStatus = document.getElementById("send-status");
@@ -198,7 +202,10 @@ function initEditor() {
 		const generateResponse = await fetch("/api/nonograms/generate", {
 			method: "POST",
 			headers: { "content-type": "application/json" },
-			body: JSON.stringify({ nonogram }),
+			body: JSON.stringify({
+				nonogram,
+				includeSolution: includeSolutionCheckbox.checked,
+			}),
 		});
 
 		if (generateResponse.ok) {
@@ -211,6 +218,12 @@ function initEditor() {
 			previewCard.style.display = "block";
 		}
 	};
+
+	includeSolutionCheckbox.addEventListener("change", () => {
+		if (grid.cells.length > 0) {
+			updatePreviewAndDownload(grid.width, grid.height, grid.cells);
+		}
+	});
 
 	downloadButton.addEventListener("click", () => {
 		if (!lastDownloadObjectUrl) {
@@ -308,6 +321,7 @@ function initEditor() {
 		const result = buildNonogramSendRequest(
 			currentId,
 			remarkableFolderInput.value,
+			includeSolutionCheckbox.checked,
 		);
 
 		if (!result.ok) {

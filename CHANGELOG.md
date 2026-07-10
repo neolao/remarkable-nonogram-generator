@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The editor page now shows a live preview image of your drawing, lets you download it as a PDF, and lets you send it straight to your paired reMarkable tablet with an optional destination folder; sending prompts you to save first if the drawing hasn't been saved yet, and reuses the existing pairing screen if your tablet isn't connected yet
 - The live preview and the downloaded/sent PDF now draw a thicker line every 5 rows and every 5 columns, making larger grids easier to scan and count, similar to sudoku block grouping
 - The editor page now remembers the last reMarkable destination folder you sent to, pre-filling it automatically on your next visit; clearing the field before sending forgets it again
+- The editor page now has an "Include solution on page 2" option: when enabled, the downloaded or sent PDF gets a second page showing the solved grid, so you can check your answer without leaving the tablet
 
 ### Fixed
 

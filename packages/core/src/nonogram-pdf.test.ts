@@ -336,4 +336,106 @@ describe("renderNonogramToPdf", () => {
 
 		expect(extractLineOps(pdfBytes)).toHaveLength(0);
 	});
+
+	it("stays a single page when includeSolution is explicitly false", async () => {
+		const nonogram = createNonogram(3, 3, buildGrid(3, 3, true));
+
+		const pdfBytes = await renderNonogramToPdf(nonogram, {
+			includeSolution: false,
+		});
+
+		const doc = await PDFDocument.load(pdfBytes);
+		expect(doc.getPageCount()).toBe(1);
+	});
+
+	it("adds a same-sized second page showing the solution when includeSolution is true", async () => {
+		const nonogram = createNonogram(3, 3, [
+			[true, false, true],
+			[false, true, false],
+			[true, true, false],
+		]);
+
+		const pdfBytes = await renderNonogramToPdf(nonogram, {
+			includeSolution: true,
+		});
+
+		const doc = await PDFDocument.load(pdfBytes);
+		expect(doc.getPageCount()).toBe(2);
+		for (const page of doc.getPages()) {
+			expect(page.getWidth()).toBeCloseTo(REMARKABLE_2_PAGE_WIDTH_PT, 1);
+			expect(page.getHeight()).toBeCloseTo(REMARKABLE_2_PAGE_HEIGHT_PT, 1);
+		}
+	});
+
+	it("draws the solution page's cells filled/empty to match the source drawing, while the puzzle page stays entirely blank", async () => {
+		const cells = [
+			[true, false, true],
+			[false, true, false],
+			[true, true, false],
+		];
+		const nonogram = createNonogram(3, 3, cells);
+		const totalCells = cells.flat().length;
+		const filledCells = cells.flat().filter(Boolean).length;
+		const emptyCells = totalCells - filledCells;
+
+		const pdfBytes = await renderNonogramToPdf(nonogram, {
+			includeSolution: true,
+		});
+
+		// Puzzle page (all white) + solution page's empty cells are white;
+		// only the solution page's filled cells are black.
+		expect(countCellRectangles(pdfBytes, "1 1 1")).toBe(
+			totalCells + emptyCells,
+		);
+		expect(countCellRectangles(pdfBytes, "0 0 0")).toBe(filledCells);
+	});
+
+	it("renders an all-white solution page for a fully empty grid", async () => {
+		const nonogram = createNonogram(2, 2, buildGrid(2, 2, false));
+		const totalCells = 4;
+
+		const pdfBytes = await renderNonogramToPdf(nonogram, {
+			includeSolution: true,
+		});
+
+		expect(countCellRectangles(pdfBytes, "1 1 1")).toBe(totalCells * 2);
+		expect(countCellRectangles(pdfBytes, "0 0 0")).toBe(0);
+	});
+
+	it("renders an all-black solution page for a fully filled grid", async () => {
+		const nonogram = createNonogram(2, 2, buildGrid(2, 2, true));
+		const totalCells = 4;
+
+		const pdfBytes = await renderNonogramToPdf(nonogram, {
+			includeSolution: true,
+		});
+
+		expect(countCellRectangles(pdfBytes, "1 1 1")).toBe(totalCells);
+		expect(countCellRectangles(pdfBytes, "0 0 0")).toBe(totalCells);
+	});
+
+	it("repeats the row/column clue labels on the solution page, matching the puzzle page's layout", async () => {
+		const nonogram = createNonogram(3, 2, [
+			[true, false, true],
+			[false, true, true],
+		]);
+		const { rowClues, columnClues } = computeNonogramClues(nonogram);
+		const expectedClueCount =
+			rowClues.reduce((sum, clues) => sum + clues.length, 0) +
+			columnClues.reduce((sum, clues) => sum + clues.length, 0);
+
+		const pdfBytes = await renderNonogramToPdf(nonogram, {
+			includeSolution: true,
+		});
+
+		expect(countTextDraws(pdfBytes)).toBe(expectedClueCount * 2);
+	});
+
+	it("rejects a nonogram with invalid dimensions even when includeSolution is true", async () => {
+		const invalidNonogram: Nonogram = { width: 0, height: 0, cells: [] };
+
+		await expect(
+			renderNonogramToPdf(invalidNonogram, { includeSolution: true }),
+		).rejects.toThrow();
+	});
 });

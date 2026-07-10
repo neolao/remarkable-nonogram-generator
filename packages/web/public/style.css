@@ -150,6 +150,19 @@ h1 {
 	outline-offset: 1px;
 }
 
+.field-checkbox {
+	flex-direction: row;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+.field-checkbox input {
+	padding: 0;
+	border: none;
+	background: none;
+	width: auto;
+}
+
 button,
 .button {
 	font: inherit;

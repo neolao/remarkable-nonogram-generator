@@ -13,6 +13,7 @@ interface PairRequestBody {
 
 interface SendNonogramRequestBody {
 	folder?: string;
+	includeSolution?: boolean;
 }
 
 async function handleGetStatus(store: CredentialStore) {
@@ -71,7 +72,9 @@ async function handleSendNonogram(
 		return { error: (error as Error).message };
 	}
 
-	const pdfBytes = await renderNonogramToPdf(saved.nonogram);
+	const pdfBytes = await renderNonogramToPdf(saved.nonogram, {
+		includeSolution: request.body?.includeSolution,
+	});
 	const visibleName = saved.name;
 	const folder = request.body?.folder;
 

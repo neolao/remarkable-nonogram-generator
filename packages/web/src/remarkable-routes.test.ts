@@ -4,6 +4,7 @@ import { join } from "node:path";
 import {
 	authenticate,
 	type Nonogram,
+	renderNonogramToPdf,
 	uploadPdf,
 } from "@remarkable-nonogram-generator/core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -232,6 +233,76 @@ describe("POST /api/nonograms/:id/send", () => {
 			expect.any(String),
 			"My puzzle",
 			expect.objectContaining({ folder: "Puzzles" }),
+		);
+	});
+
+	it("includes the solution page in the uploaded PDF when includeSolution is true", async () => {
+		const store = createFileNonogramStore(nonogramsPath);
+		const saved = await store.save({
+			name: "My puzzle",
+			nonogram: sampleNonogram,
+		});
+		await writeFile(
+			credentialsPath,
+			JSON.stringify({ deviceToken: "existing-token" }),
+		);
+		// biome-ignore lint/suspicious/noExplicitAny: partial fake of the opaque core session type
+		authenticateMock.mockResolvedValue({} as any);
+		let capturedReadFile: ((path: string) => Promise<Uint8Array>) | undefined;
+		uploadPdfMock.mockImplementation(
+			async (_session, _filename, _visibleName, options) => {
+				capturedReadFile = options?.readFile;
+			},
+		);
+		const app = buildServer({ credentialsPath, nonogramsPath });
+
+		const response = await app.inject({
+			method: "POST",
+			url: `/api/nonograms/${saved.id}/send`,
+			payload: { includeSolution: true },
+		});
+
+		expect(response.statusCode).toBe(200);
+		const uploadedBytes = await capturedReadFile?.("unused");
+		const expectedBytes = await renderNonogramToPdf(sampleNonogram, {
+			includeSolution: true,
+		});
+		expect(Buffer.from(uploadedBytes ?? [])).toEqual(
+			Buffer.from(expectedBytes),
+		);
+	});
+
+	it("uploads the usual single-page PDF when includeSolution is not requested", async () => {
+		const store = createFileNonogramStore(nonogramsPath);
+		const saved = await store.save({
+			name: "My puzzle",
+			nonogram: sampleNonogram,
+		});
+		await writeFile(
+			credentialsPath,
+			JSON.stringify({ deviceToken: "existing-token" }),
+		);
+		// biome-ignore lint/suspicious/noExplicitAny: partial fake of the opaque core session type
+		authenticateMock.mockResolvedValue({} as any);
+		let capturedReadFile: ((path: string) => Promise<Uint8Array>) | undefined;
+		uploadPdfMock.mockImplementation(
+			async (_session, _filename, _visibleName, options) => {
+				capturedReadFile = options?.readFile;
+			},
+		);
+		const app = buildServer({ credentialsPath, nonogramsPath });
+
+		const response = await app.inject({
+			method: "POST",
+			url: `/api/nonograms/${saved.id}/send`,
+			payload: {},
+		});
+
+		expect(response.statusCode).toBe(200);
+		const uploadedBytes = await capturedReadFile?.("unused");
+		const expectedBytes = await renderNonogramToPdf(sampleNonogram);
+		expect(Buffer.from(uploadedBytes ?? [])).toEqual(
+			Buffer.from(expectedBytes),
 		);
 	});
 });

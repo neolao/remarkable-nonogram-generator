@@ -58,4 +58,38 @@ describe("buildNonogramSendRequest", () => {
 			error: "Save this nonogram before sending it to reMarkable",
 		});
 	});
+
+	it("includes includeSolution in the request body when true", () => {
+		const result = buildNonogramSendRequest(
+			"b528d20c-8a99-4127-bc27-2240c3dd3d9a",
+			"",
+			true,
+		);
+
+		expect(result).toEqual({
+			ok: true,
+			request: {
+				method: "POST",
+				url: "/api/nonograms/b528d20c-8a99-4127-bc27-2240c3dd3d9a/send",
+				body: { includeSolution: true },
+			},
+		});
+	});
+
+	it("omits includeSolution from the request body when false", () => {
+		const result = buildNonogramSendRequest(
+			"b528d20c-8a99-4127-bc27-2240c3dd3d9a",
+			"Puzzles",
+			false,
+		);
+
+		expect(result).toEqual({
+			ok: true,
+			request: {
+				method: "POST",
+				url: "/api/nonograms/b528d20c-8a99-4127-bc27-2240c3dd3d9a/send",
+				body: { folder: "Puzzles" },
+			},
+		});
+	});
 });

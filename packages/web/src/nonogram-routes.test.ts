@@ -407,6 +407,38 @@ describe("POST /api/nonograms/generate", () => {
 		expect(response.statusCode).toBe(400);
 		expect(response.json().error).toMatch(/required/i);
 	});
+
+	it("returns a two-page PDF including the solution when includeSolution is true", async () => {
+		const app = buildServer({ credentialsPath, nonogramsPath });
+
+		const response = await app.inject({
+			method: "POST",
+			url: "/api/nonograms/generate",
+			payload: { nonogram: sampleNonogram, includeSolution: true },
+		});
+
+		expect(response.statusCode).toBe(200);
+		expect(response.rawPayload).toEqual(
+			Buffer.from(
+				await renderNonogramToPdf(sampleNonogram, { includeSolution: true }),
+			),
+		);
+	});
+
+	it("returns the usual single-page PDF when includeSolution is false", async () => {
+		const app = buildServer({ credentialsPath, nonogramsPath });
+
+		const response = await app.inject({
+			method: "POST",
+			url: "/api/nonograms/generate",
+			payload: { nonogram: sampleNonogram, includeSolution: false },
+		});
+
+		expect(response.statusCode).toBe(200);
+		expect(response.rawPayload).toEqual(
+			Buffer.from(await renderNonogramToPdf(sampleNonogram)),
+		);
+	});
 });
 
 describe("DELETE /api/nonograms/:id", () => {
