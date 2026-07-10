@@ -3,7 +3,7 @@ import type { Nonogram } from "./nonogram-grid.js";
 
 const DEFAULT_CELL_SIZE_PX = 20;
 const STROKE_WIDTH_PX = 1;
-const THICK_STROKE_WIDTH_PX = STROKE_WIDTH_PX * 3;
+const THICK_STROKE_WIDTH_PX = STROKE_WIDTH_PX * 2;
 const THICK_GRIDLINE_INTERVAL = 5;
 const FONT_SIZE_RATIO = 0.55;
 
