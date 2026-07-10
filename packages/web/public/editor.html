@@ -47,6 +47,34 @@
         </div>
       </div>
 
+      <div id="preview-card" class="card preview-card" style="display: none;">
+        <img id="nonogram-preview" alt="Nonogram preview" style="display: none;" />
+
+        <div class="actions">
+          <button id="download-button" class="button" type="button" style="display: none;">Download PDF</button>
+          <label class="field" id="remarkable-folder-field">
+            reMarkable folder (optional)
+            <input type="text" id="remarkable-folder" name="remarkable-folder" placeholder="Root" />
+          </label>
+          <button id="send-button" class="button" type="button">Send to reMarkable</button>
+        </div>
+
+        <p id="send-status" role="status"></p>
+
+        <div id="pairing-section" style="display: none;">
+          <p>
+            Not connected to reMarkable yet. Get a one-time pairing code at
+            <a href="https://my.remarkable.com/device/browser/connect" target="_blank" rel="noopener">my.remarkable.com/device/browser/connect</a>.
+          </p>
+          <label class="field">
+            Pairing code
+            <input type="text" id="pairing-code" name="pairing-code" />
+          </label>
+          <button id="pairing-submit" class="button" type="button">Pair device</button>
+          <p id="pairing-error" role="alert"></p>
+        </div>
+      </div>
+
       <a class="button" href="./index.html">Back to list</a>
     </div>
 

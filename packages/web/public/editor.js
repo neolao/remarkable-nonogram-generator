@@ -38,6 +38,30 @@ function computeClientNonogramClues(cells) {
 	return { rowClues, columnClues };
 }
 
+// Mirrors the rules tested in packages/web/src/nonogram-send-request.ts;
+// duplicated here because this static page runs unmodified in the browser,
+// with no build step available to import the compiled/tested module.
+function buildNonogramSendRequest(currentId, folder) {
+	if (!currentId) {
+		return {
+			ok: false,
+			error: "Save this nonogram before sending it to reMarkable",
+		};
+	}
+
+	const trimmedFolder = folder.trim();
+	const body = trimmedFolder ? { folder: trimmedFolder } : {};
+
+	return {
+		ok: true,
+		request: {
+			method: "POST",
+			url: `/api/nonograms/${currentId}/send`,
+			body,
+		},
+	};
+}
+
 // Mirrors the rules tested in packages/web/src/nonogram-save-request.ts;
 // duplicated here because this static page runs unmodified in the browser,
 // with no build step available to import the compiled/tested module.
@@ -79,9 +103,20 @@ function initEditor() {
 	const saveButton = document.getElementById("save-button");
 	const saveError = document.getElementById("save-error");
 	const saveStatus = document.getElementById("save-status");
+	const previewCard = document.getElementById("preview-card");
+	const previewImage = document.getElementById("nonogram-preview");
+	const downloadButton = document.getElementById("download-button");
+	const remarkableFolderInput = document.getElementById("remarkable-folder");
+	const sendButton = document.getElementById("send-button");
+	const sendStatus = document.getElementById("send-status");
+	const pairingSection = document.getElementById("pairing-section");
+	const pairingCodeInput = document.getElementById("pairing-code");
+	const pairingSubmit = document.getElementById("pairing-submit");
+	const pairingError = document.getElementById("pairing-error");
 
 	const params = new URLSearchParams(window.location.search);
 	let currentId = params.get("id");
+	let lastDownloadObjectUrl = null;
 	const grid = { width: 0, height: 0, cells: [] };
 
 	const renderClues = (width, height, cells) => {
@@ -106,6 +141,49 @@ function initEditor() {
 		}
 	};
 
+	const updatePreviewAndDownload = async (width, height, cells) => {
+		const nonogram = { width, height, cells };
+
+		const previewResponse = await fetch("/api/nonograms/preview", {
+			method: "POST",
+			headers: { "content-type": "application/json" },
+			body: JSON.stringify({ nonogram }),
+		});
+
+		if (previewResponse.ok) {
+			const svgMarkup = await previewResponse.text();
+			previewImage.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgMarkup)}`;
+			previewImage.style.display = "block";
+			previewCard.style.display = "block";
+		}
+
+		const generateResponse = await fetch("/api/nonograms/generate", {
+			method: "POST",
+			headers: { "content-type": "application/json" },
+			body: JSON.stringify({ nonogram }),
+		});
+
+		if (generateResponse.ok) {
+			if (lastDownloadObjectUrl) {
+				URL.revokeObjectURL(lastDownloadObjectUrl);
+			}
+			const pdfBlob = await generateResponse.blob();
+			lastDownloadObjectUrl = URL.createObjectURL(pdfBlob);
+			downloadButton.style.display = "inline";
+			previewCard.style.display = "block";
+		}
+	};
+
+	downloadButton.addEventListener("click", () => {
+		if (!lastDownloadObjectUrl) {
+			return;
+		}
+		const temporaryLink = document.createElement("a");
+		temporaryLink.href = lastDownloadObjectUrl;
+		temporaryLink.download = "nonogram.pdf";
+		temporaryLink.click();
+	});
+
 	const renderGrid = (width, height, cells) => {
 		grid.width = width;
 		grid.height = height;
@@ -128,6 +206,7 @@ function initEditor() {
 					cell.classList.toggle("filled", cells[row][column]);
 					cell.setAttribute("aria-pressed", String(cells[row][column]));
 					renderClues(width, height, cells);
+					updatePreviewAndDownload(width, height, cells);
 				});
 
 				gridElement.append(cell);
@@ -136,6 +215,7 @@ function initEditor() {
 
 		renderClues(width, height, cells);
 		boardElement.classList.add("visible");
+		updatePreviewAndDownload(width, height, cells);
 	};
 
 	const showGrid = (name, nonogram) => {
@@ -185,6 +265,72 @@ function initEditor() {
 	};
 
 	saveButton.addEventListener("click", handleSave);
+
+	const sendToRemarkable = async () => {
+		const result = buildNonogramSendRequest(
+			currentId,
+			remarkableFolderInput.value,
+		);
+
+		if (!result.ok) {
+			sendStatus.textContent = result.error;
+			return;
+		}
+
+		sendStatus.textContent = "Sending to reMarkable...";
+		pairingSection.style.display = "none";
+
+		const response = await fetch(result.request.url, {
+			method: result.request.method,
+			headers: { "content-type": "application/json" },
+			body: JSON.stringify(result.request.body),
+		});
+
+		if (response.ok) {
+			sendStatus.textContent = "Nonogram sent to reMarkable.";
+			return;
+		}
+
+		const body = await response.json();
+
+		if (body.error === "not_authenticated") {
+			sendStatus.textContent = "";
+			pairingSection.style.display = "block";
+			return;
+		}
+
+		sendStatus.textContent = body.error ?? "Failed to send this nonogram";
+	};
+
+	sendButton.addEventListener("click", () => {
+		sendToRemarkable();
+	});
+
+	pairingSubmit.addEventListener("click", async () => {
+		pairingError.textContent = "";
+		const pairingCode = pairingCodeInput.value.trim();
+
+		if (!pairingCode) {
+			pairingError.textContent = "Pairing code is required";
+			return;
+		}
+
+		const response = await fetch("/api/remarkable/pair", {
+			method: "POST",
+			headers: { "content-type": "application/json" },
+			body: JSON.stringify({ pairingCode }),
+		});
+
+		if (!response.ok) {
+			const body = await response.json();
+			pairingError.textContent = body.error ?? "Pairing failed";
+			return;
+		}
+
+		pairingCodeInput.value = "";
+		pairingError.textContent = "";
+		await sendToRemarkable();
+	});
 
 	const loadExisting = async () => {
 		const response = await fetch(`/api/nonograms/${currentId}`);
