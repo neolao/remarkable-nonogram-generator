@@ -76,19 +76,18 @@ describe("renderNonogramToPdf", () => {
 		expect(page.getHeight()).toBeCloseTo(REMARKABLE_2_PAGE_HEIGHT_PT, 1);
 	});
 
-	it("draws one rectangle per grid cell, black for filled cells and white for empty cells", async () => {
+	it("draws every cell empty/white regardless of the source drawing, so the exported puzzle stays blank to solve", async () => {
 		const cells = [
 			[true, false, true],
 			[false, true, false],
 		];
 		const nonogram = createNonogram(3, 2, cells);
-		const filledCount = cells.flat().filter(Boolean).length;
-		const emptyCount = cells.flat().filter((cell) => !cell).length;
+		const totalCells = cells.flat().length;
 
 		const pdfBytes = await renderNonogramToPdf(nonogram);
 
-		expect(countCellRectangles(pdfBytes, "0 0 0")).toBe(filledCount);
-		expect(countCellRectangles(pdfBytes, "1 1 1")).toBe(emptyCount);
+		expect(countCellRectangles(pdfBytes, "1 1 1")).toBe(totalCells);
+		expect(countCellRectangles(pdfBytes, "0 0 0")).toBe(0);
 	});
 
 	it("draws exactly one text label per computed row/column clue, matching the SVG preview's clue layout", async () => {

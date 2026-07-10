@@ -25,3 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The editor page now shows row and column clues next to the grid, updating instantly as you toggle cells, with no page reload needed
 - The editor page now lets you name and save your drawing: a new nonogram is created on first save, further saves on the same drawing update it in place instead of creating a duplicate, and a validation message appears if you try to save without a name
 - The editor page now shows a live preview image of your drawing, lets you download it as a PDF, and lets you send it straight to your paired reMarkable tablet with an optional destination folder; sending prompts you to save first if the drawing hasn't been saved yet, and reuses the existing pairing screen if your tablet isn't connected yet
+
+### Fixed
+
+- The downloaded and sent PDF is now always a blank puzzle grid showing only the row/column clues, instead of showing the drawn solution with cells already filled in — the live in-browser preview still shows your drawing as-is while you edit it

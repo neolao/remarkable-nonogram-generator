@@ -20,7 +20,6 @@ export const REMARKABLE_2_PAGE_HEIGHT_PT =
 const PAGE_MARGIN_PT = 24;
 const STROKE_COLOR = rgb(0, 0, 0);
 const STROKE_WIDTH_PT = 1;
-const FILL_COLOR_FILLED = rgb(0, 0, 0);
 const FILL_COLOR_EMPTY = rgb(1, 1, 1);
 const TEXT_COLOR = rgb(0, 0, 0);
 const CLUE_FONT_SIZE_RATIO = 0.55;
@@ -101,6 +100,9 @@ function toPdfRectY(
 	return REMARKABLE_2_PAGE_HEIGHT_PT - layout.topOffset - localY - height;
 }
 
+// The exported PDF is the blank puzzle to solve on the device, not the
+// drawn solution: every cell is always rendered empty regardless of
+// nonogram.cells, which is only used to compute the clues below.
 function drawCells(
 	page: PDFPage,
 	nonogram: Nonogram,
@@ -120,9 +122,7 @@ function drawCells(
 				y: toPdfRectY(layout, localY, cellSize),
 				width: cellSize,
 				height: cellSize,
-				color: nonogram.cells[row][column]
-					? FILL_COLOR_FILLED
-					: FILL_COLOR_EMPTY,
+				color: FILL_COLOR_EMPTY,
 				borderColor: STROKE_COLOR,
 				borderWidth: STROKE_WIDTH_PT,
 			});
