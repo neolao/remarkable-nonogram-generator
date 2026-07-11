@@ -13,13 +13,10 @@
 	},
 	"dependencies": {
 		"pdf-lib": "^1.17.1",
-		"pngjs": "^7.0.0",
 		"puppeteer": "^25.3.0",
-		"rmapi-js": "^11.0.0",
-		"tesseract.js": "^7.0.0"
+		"rmapi-js": "^11.0.0"
 	},
 	"devDependencies": {
-		"@types/pngjs": "^6.0.5",
 		"typescript": "^7.0.2"
 	}
 }

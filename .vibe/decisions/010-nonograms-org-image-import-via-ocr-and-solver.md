@@ -1,6 +1,6 @@
 ---
 date: 2026-07-11
-status: accepted
+status: superseded by 012
 ---
 # First image import type: OCR clues + logical solver for nonograms.org-style print images
 

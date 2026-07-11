@@ -9,6 +9,25 @@ describe("web server", () => {
 		expect(response.statusCode).toBe(200);
 		expect(response.json()).toEqual({ core: "0.1.0" });
 	});
+
+	it("no longer exposes the image-based import route", async () => {
+		const app = buildServer();
+		const response = await app.inject({
+			method: "POST",
+			url: "/api/nonograms/import-image",
+		});
+
+		expect(response.statusCode).toBe(404);
+	});
+
+	it("serves the import page with only the URL import form, not the image import form", async () => {
+		const app = buildServer();
+		const response = await app.inject({ method: "GET", url: "/import.html" });
+
+		expect(response.statusCode).toBe(200);
+		expect(response.body).not.toContain('id="import-form"');
+		expect(response.body).toContain('id="import-url-form"');
+	});
 });
 
 describe("resolvePort", () => {
