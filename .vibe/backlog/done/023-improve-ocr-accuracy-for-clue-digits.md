@@ -1,5 +1,5 @@
 ---
-status: todo
+status: done
 ---
 # Improve OCR Accuracy For Small Nonogram Clue Digits
 
@@ -15,3 +15,6 @@ The nonograms.org image import (item 021) reads clue numbers via OCR (tesseract.
 Candidate directions to try, in no particular order: tesseract's "best" (more accurate, larger) trained-data variant instead of the default "fast" one; additional image pre-processing before OCR (contrast stretching, binarization/thresholding tuned per-crop rather than globally); a larger upscale factor or a smoother (non-nearest-neighbor) upscaling algorithm; cross-checking a low-confidence OCR result against the solver's own feedback (e.g. retry a specific slot at higher fidelity only when the full-grid solve fails) instead of always doing a single OCR pass per slot upfront.
 
 This was explicitly deferred during item 021 (`.vibe/backlog/done/021-import-nonogram-from-image.md`) to stay within scope; the safety-net behavior (rejecting inconsistent clues rather than guessing) must be preserved, not weakened, while pursuing this.
+
+## Closure note
+Closed as moot, not implemented: item 024 (`.vibe/backlog/done/024-remove-image-based-ocr-import.md`) removed the OCR-based image import path entirely in favor of the more accurate URL-based import, so there is no longer an OCR path to improve.
