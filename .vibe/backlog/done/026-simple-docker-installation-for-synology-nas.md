@@ -1,5 +1,5 @@
 ---
-status: todo
+status: done
 ---
 # Simple Docker Installation for Synology NAS
 
