@@ -118,11 +118,20 @@ function buildNonogramUrlImportRequest(puzzleUrl) {
 	};
 }
 
+// Mirrors packages/web/src/nonogram-import-progress.ts (tested there) - the
+// static frontend has no build step to import it, see CLAUDE.md.
+function setImportInProgress(toggle, inProgress) {
+	toggle.submitButton.disabled = inProgress;
+	toggle.progressElement.hidden = !inProgress;
+}
+
 function initImportUrlForm() {
 	const form = document.getElementById("import-url-form");
 	const urlInput = document.getElementById("import-url");
 	const submitButton = document.getElementById("import-url-submit");
+	const progressElement = document.getElementById("import-url-progress");
 	const errorElement = document.getElementById("import-url-error");
+	const progressToggle = { submitButton, progressElement };
 
 	form.addEventListener("submit", async (event) => {
 		event.preventDefault();
@@ -134,7 +143,7 @@ function initImportUrlForm() {
 			return;
 		}
 
-		submitButton.disabled = true;
+		setImportInProgress(progressToggle, true);
 		let response;
 		try {
 			response = await fetch(result.request.url, {
@@ -145,14 +154,14 @@ function initImportUrlForm() {
 		} catch {
 			errorElement.textContent =
 				"Could not reach the server. Check your connection and try again.";
-			submitButton.disabled = false;
+			setImportInProgress(progressToggle, false);
 			return;
 		}
 
 		if (!response.ok) {
 			const body = await response.json().catch(() => ({}));
 			errorElement.textContent = body.error ?? "Failed to import this puzzle";
-			submitButton.disabled = false;
+			setImportInProgress(progressToggle, false);
 			return;
 		}
 
