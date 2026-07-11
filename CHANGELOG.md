@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The editor page now remembers the last reMarkable destination folder you sent to, pre-filling it automatically on your next visit; clearing the field before sending forgets it again
 - The editor page now has an "Include solution on page 2" option: when enabled, the downloaded or sent PDF gets a second page showing the solved grid, so you can check your answer without leaving the tablet
 - You can now create a nonogram by uploading an image of a printable puzzle page (with row/column clue numbers instead of a solved grid) via a new "Import from image" page: the app reads the clue numbers from the image and works out the puzzle's grid the same way a person solving it logically would, without ever trusting the source for the actual cell layout; a puzzle that isn't fully solvable by logic alone, or an image that can't be read, is rejected with a clear error instead of guessing
+- You can now also import a puzzle by pasting its nonograms.org page URL directly on the same "Import from image" page: the clue numbers are read from the page and the grid is worked out from them the same logical way as the image import, without ever trusting the source for the cell layout
 
 ### Changed
 

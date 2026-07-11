@@ -94,4 +94,72 @@ function initImportForm() {
 	});
 }
 
+// Mirrors packages/web/src/nonogram-url-import-request.ts (tested there) -
+// the static frontend has no build step to import it, see CLAUDE.md.
+function buildNonogramUrlImportRequest(puzzleUrl) {
+	const trimmed = puzzleUrl.trim();
+	if (!trimmed) {
+		return { ok: false, error: "A puzzle url is required" };
+	}
+
+	try {
+		new URL(trimmed);
+	} catch {
+		return { ok: false, error: "This doesn't look like a valid URL" };
+	}
+
+	return {
+		ok: true,
+		request: {
+			method: "POST",
+			url: "/api/nonograms/import-url",
+			body: { url: trimmed },
+		},
+	};
+}
+
+function initImportUrlForm() {
+	const form = document.getElementById("import-url-form");
+	const urlInput = document.getElementById("import-url");
+	const submitButton = document.getElementById("import-url-submit");
+	const errorElement = document.getElementById("import-url-error");
+
+	form.addEventListener("submit", async (event) => {
+		event.preventDefault();
+		errorElement.textContent = "";
+
+		const result = buildNonogramUrlImportRequest(urlInput.value);
+		if (!result.ok) {
+			errorElement.textContent = result.error;
+			return;
+		}
+
+		submitButton.disabled = true;
+		let response;
+		try {
+			response = await fetch(result.request.url, {
+				method: result.request.method,
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(result.request.body),
+			});
+		} catch {
+			errorElement.textContent =
+				"Could not reach the server. Check your connection and try again.";
+			submitButton.disabled = false;
+			return;
+		}
+
+		if (!response.ok) {
+			const body = await response.json().catch(() => ({}));
+			errorElement.textContent = body.error ?? "Failed to import this puzzle";
+			submitButton.disabled = false;
+			return;
+		}
+
+		const saved = await response.json();
+		window.location.href = `./editor.html?id=${encodeURIComponent(saved.id)}`;
+	});
+}
+
 initImportForm();
+initImportUrlForm();

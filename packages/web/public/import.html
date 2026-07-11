@@ -47,6 +47,27 @@
           <p id="import-error" role="alert"></p>
         </form>
       </div>
+
+      <div class="card">
+        <h2>Or import directly from a nonograms.org puzzle URL</h2>
+        <p>
+          Paste the URL of a nonograms.org puzzle page. The clue numbers are read
+          from the page and the grid is worked out from them, just like the image
+          import above.
+        </p>
+
+        <form id="import-url-form">
+          <label class="field">
+            Puzzle URL
+            <input type="url" id="import-url" name="url" placeholder="https://www.nonograms.org/nonograms/i/81801" required />
+          </label>
+
+          <div class="actions">
+            <button id="import-url-submit" class="button" type="submit">Import</button>
+          </div>
+          <p id="import-url-error" role="alert"></p>
+        </form>
+      </div>
     </div>
 
     <script type="module" src="./import.js"></script>

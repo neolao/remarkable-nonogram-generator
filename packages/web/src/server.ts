@@ -14,6 +14,8 @@ import {
 } from "./file-nonogram-store.js";
 import type { ImportNonogramFromImageFn } from "./nonogram-import-routes.js";
 import { registerNonogramImportRoutes } from "./nonogram-import-routes.js";
+import type { ImportNonogramFromUrlFn } from "./nonogram-import-url-routes.js";
+import { registerNonogramImportUrlRoutes } from "./nonogram-import-url-routes.js";
 import { registerNonogramRoutes } from "./nonogram-routes.js";
 import { registerRemarkableRoutes } from "./remarkable-routes.js";
 
@@ -41,9 +43,13 @@ export interface BuildServerOptions {
 	credentialsPath?: string;
 	nonogramsPath?: string;
 	importNonogramFromImageFn?: ImportNonogramFromImageFn;
+	importNonogramFromUrlFn?: ImportNonogramFromUrlFn;
 }
 
-const CONNECTION_TIMEOUT_MS = 30_000;
+// 60s (not the usual 30s) to comfortably cover a headless-browser puzzle
+// import (nonogram-page-clues.ts), which can take close to its own internal
+// 30s page-load timeout on a cold Chromium start.
+const CONNECTION_TIMEOUT_MS = 60_000;
 const KEEP_ALIVE_TIMEOUT_MS = 5_000;
 
 export function buildServer(options: BuildServerOptions = {}) {
@@ -71,6 +77,11 @@ export function buildServer(options: BuildServerOptions = {}) {
 		app,
 		nonogramStore,
 		options.importNonogramFromImageFn,
+	);
+	registerNonogramImportUrlRoutes(
+		app,
+		nonogramStore,
+		options.importNonogramFromUrlFn,
 	);
 
 	return app;

@@ -20,6 +20,8 @@ export type {
 } from "./nonogram-image-import.js";
 export { importNonogramFromImage } from "./nonogram-image-import.js";
 export { solveNonogramFromClues } from "./nonogram-line-solver.js";
+export type { PageRenderer } from "./nonogram-page-clues.js";
+export { createPuppeteerPageRenderer } from "./nonogram-page-clues.js";
 export {
 	REMARKABLE_2_PAGE_HEIGHT_PT,
 	REMARKABLE_2_PAGE_WIDTH_PT,
@@ -33,6 +35,8 @@ export type {
 } from "./nonogram-store.js";
 export type { RenderNonogramToSvgOptions } from "./nonogram-svg.js";
 export { renderNonogramToSvg } from "./nonogram-svg.js";
+export type { ImportNonogramFromUrlOptions } from "./nonogram-url-import.js";
+export { importNonogramFromUrl } from "./nonogram-url-import.js";
 export type {
 	RemarkableAuthOptions,
 	RemarkableSession,
