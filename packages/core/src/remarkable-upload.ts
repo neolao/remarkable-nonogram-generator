@@ -15,6 +15,37 @@ const REMARKABLE_CLOUD_TIMEOUT_MS = 30_000;
 // upstream.
 const FOLDER_LOOKUP_CONCURRENCY = 15;
 
+const METADATA_TIMEOUT_MESSAGE =
+	"Timed out while reading reMarkable Cloud entry metadata";
+
+// A single slow entry among the potentially hundreds an account can hold
+// shouldn't abort the whole folder lookup: retry once before giving up on it,
+// to absorb a one-off slowdown from the reMarkable Cloud service.
+async function getMetadataWithRetry(
+	session: RemarkableSession,
+	entry: { id: string; hash: string },
+): ReturnType<RemarkableSession["getMetadata"]> {
+	try {
+		return await withTimeout(
+			session.getMetadata(entry.id, entry.hash),
+			REMARKABLE_CLOUD_TIMEOUT_MS,
+			METADATA_TIMEOUT_MESSAGE,
+		);
+	} catch (cause) {
+		if (
+			!(cause instanceof Error) ||
+			cause.message !== METADATA_TIMEOUT_MESSAGE
+		) {
+			throw cause;
+		}
+		return await withTimeout(
+			session.getMetadata(entry.id, entry.hash),
+			REMARKABLE_CLOUD_TIMEOUT_MS,
+			METADATA_TIMEOUT_MESSAGE,
+		);
+	}
+}
+
 async function resolveFolderId(
 	session: RemarkableSession,
 	folderName: string,
@@ -31,11 +62,7 @@ async function resolveFolderId(
 		while (cursor < ids.length && !foundId) {
 			const entry = ids[cursor];
 			cursor++;
-			const metadata = await withTimeout(
-				session.getMetadata(entry.id, entry.hash),
-				REMARKABLE_CLOUD_TIMEOUT_MS,
-				"Timed out while reading reMarkable Cloud entry metadata",
-			);
+			const metadata = await getMetadataWithRetry(session, entry);
 			if (
 				metadata.type === "CollectionType" &&
 				metadata.visibleName === folderName &&

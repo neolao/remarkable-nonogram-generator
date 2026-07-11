@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { RemarkableSession } from "./remarkable-auth.js";
 import { uploadPdf } from "./remarkable-upload.js";
 
@@ -39,6 +39,48 @@ function createFakeSession(overrides: FakeSessionOverrides = {}) {
 }
 
 describe("uploadPdf", () => {
+	afterEach(() => {
+		vi.useRealTimers();
+	});
+
+	it("retries a single entry's metadata lookup once after a timeout before giving up on it", async () => {
+		vi.useFakeTimers();
+		let attemptsForFolderEntry = 0;
+		const session = createFakeSession({
+			listIds: async () => [{ id: "id-0", hash: "hash-0" }],
+			getMetadata: async (id) => {
+				if (id !== "id-0") {
+					return {
+						type: "DocumentType",
+						visibleName: "Something else",
+						parent: "",
+					};
+				}
+				attemptsForFolderEntry++;
+				if (attemptsForFolderEntry === 1) {
+					// simulate a stalled request that never settles, forcing withTimeout to fire
+					return new Promise(() => {});
+				}
+				return { type: "CollectionType", visibleName: "Nonograms", parent: "" };
+			},
+		});
+
+		const uploadPromise = uploadPdf(session, FAKE_PDF_BYTES, "My Nonogram", {
+			folder: "Nonograms",
+		});
+		await vi.advanceTimersByTimeAsync(30_000);
+		await uploadPromise;
+
+		// biome-ignore lint/suspicious/noExplicitAny: accessing the fake session's mocked methods
+		const fakeSession = session as any;
+		expect(attemptsForFolderEntry).toBe(2);
+		expect(fakeSession.putPdf).toHaveBeenCalledWith(
+			"My Nonogram",
+			FAKE_PDF_BYTES,
+			{ parent: "id-0" },
+		);
+	});
+
 	it("uploads the given PDF bytes under the visible name", async () => {
 		const session = createFakeSession();
 
