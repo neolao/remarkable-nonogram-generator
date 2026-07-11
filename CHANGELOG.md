@@ -31,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - You can now import a puzzle by pasting its nonograms.org page URL on a new "Import a nonogram" page: the clue numbers are read directly from the page and the puzzle's grid is worked out from them the same way a person solving it logically would, without ever trusting the source for the actual cell layout; a puzzle that isn't fully solvable by logic alone, or a page that can't be read, is rejected with a clear error instead of guessing
 - The home page's saved nonograms list now shows a small thumbnail of each puzzle's drawn grid next to its name and size, making it easier to recognize a puzzle at a glance without opening it
 - The nonograms.org URL import form now shows a progress indicator (spinner and message) while the import is running, since it can take up to a minute, and disables the Import button until it finishes
+- The app can now be deployed as a single Docker container (with a ready-to-use `docker-compose.yml`), including a step-by-step guide for running it on a Synology NAS through Container Manager; saved nonograms and reMarkable pairing persist across container restarts and image updates via a mounted volume
 
 ### Changed
 

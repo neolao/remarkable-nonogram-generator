@@ -1,0 +1,15 @@
+services:
+  remarkable-nonogram-generator:
+    build: .
+    # Or, once an image is published to a registry:
+    # image: remarkable-nonogram-generator:latest
+    restart: unless-stopped
+    ports:
+      - "4279:4279"
+    environment:
+      PORT: "4279"
+    volumes:
+      - nonogram-data:/home/node/.config/remarkable-nonogram-generator
+
+volumes:
+  nonogram-data:
