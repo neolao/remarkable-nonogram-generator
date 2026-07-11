@@ -6,6 +6,10 @@ const STROKE_WIDTH_PX = 1;
 const THICK_STROKE_WIDTH_PX = STROKE_WIDTH_PX * 2;
 const THICK_GRIDLINE_INTERVAL = 5;
 const FONT_SIZE_RATIO = 0.55;
+// Clue numbers stack in a margin slot narrower than a full grid cell (they
+// only need to fit their own digits, not a full puzzle cell), so the margin
+// takes less of the page while the numbers themselves keep the same size.
+const MARGIN_SLOT_RATIO = 0.75;
 
 export interface RenderNonogramToSvgOptions {
 	cellSizePx?: number;
@@ -25,14 +29,15 @@ function renderRowClues(
 	gridStartX: number,
 	gridStartY: number,
 	cellSizePx: number,
+	marginSlotSizePx: number,
 	fontSizePx: number,
 ): string {
 	return rowClues
 		.map((clues, row) => {
 			return clues
 				.map((clue, slot) => {
-					const slotX = gridStartX - (clues.length - slot) * cellSizePx;
-					const centerX = slotX + cellSizePx / 2;
+					const slotX = gridStartX - (clues.length - slot) * marginSlotSizePx;
+					const centerX = slotX + marginSlotSizePx / 2;
 					const centerY = gridStartY + row * cellSizePx + cellSizePx / 2;
 					return renderClueText(clue, centerX, centerY, fontSizePx);
 				})
@@ -46,15 +51,16 @@ function renderColumnClues(
 	gridStartX: number,
 	gridStartY: number,
 	cellSizePx: number,
+	marginSlotSizePx: number,
 	fontSizePx: number,
 ): string {
 	return columnClues
 		.map((clues, column) => {
 			return clues
 				.map((clue, slot) => {
-					const slotY = gridStartY - (clues.length - slot) * cellSizePx;
+					const slotY = gridStartY - (clues.length - slot) * marginSlotSizePx;
 					const centerX = gridStartX + column * cellSizePx + cellSizePx / 2;
-					const centerY = slotY + cellSizePx / 2;
+					const centerY = slotY + marginSlotSizePx / 2;
 					return renderClueText(clue, centerX, centerY, fontSizePx);
 				})
 				.join("");
@@ -129,9 +135,10 @@ export function renderNonogramToSvg(
 	const leftMarginCells = Math.max(...rowClues.map((clues) => clues.length));
 	const topMarginCells = Math.max(...columnClues.map((clues) => clues.length));
 	const fontSizePx = cellSizePx * FONT_SIZE_RATIO;
+	const marginSlotSizePx = cellSizePx * MARGIN_SLOT_RATIO;
 
-	const gridStartX = leftMarginCells * cellSizePx;
-	const gridStartY = topMarginCells * cellSizePx;
+	const gridStartX = leftMarginCells * marginSlotSizePx;
+	const gridStartY = topMarginCells * marginSlotSizePx;
 	const width = gridStartX + nonogram.width * cellSizePx;
 	const height = gridStartY + nonogram.height * cellSizePx;
 
@@ -148,6 +155,7 @@ export function renderNonogramToSvg(
 		gridStartX,
 		gridStartY,
 		cellSizePx,
+		marginSlotSizePx,
 		fontSizePx,
 	);
 	const columnCluesMarkup = renderColumnClues(
@@ -155,6 +163,7 @@ export function renderNonogramToSvg(
 		gridStartX,
 		gridStartY,
 		cellSizePx,
+		marginSlotSizePx,
 		fontSizePx,
 	);
 

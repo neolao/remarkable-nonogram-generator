@@ -242,4 +242,54 @@ describe("renderNonogramToSvg", () => {
 
 		expect(extractThickLines(svg)).toHaveLength(0);
 	});
+
+	it("packs the clue margin tighter than one full grid cell per clue slot, leaving more room for the grid", () => {
+		const width = 6;
+		const height = 3;
+		const cells = [
+			[true, false, true, false, true, false],
+			[false, false, false, false, false, false],
+			[false, false, false, false, false, false],
+		];
+		const nonogram = createNonogram(width, height, cells);
+		const cellSizePx = 20;
+		const { rowClues } = computeNonogramClues(nonogram);
+		const leftMarginCells = Math.max(...rowClues.map((clues) => clues.length));
+
+		const svg = renderNonogramToSvg(nonogram, { cellSizePx });
+		const { width: totalWidth } = extractViewBoxSize(svg);
+		const gridStartX = totalWidth - width * cellSizePx;
+
+		expect(leftMarginCells).toBeGreaterThan(1);
+		expect(gridStartX).toBeLessThan(leftMarginCells * cellSizePx);
+	});
+
+	it("keeps clue slots wide enough relative to the font size that adjacent numbers cannot touch", () => {
+		const width = 6;
+		const height = 2;
+		const cells = [
+			[true, false, true, false, true, false],
+			[false, false, false, false, false, false],
+		];
+		const nonogram = createNonogram(width, height, cells);
+		const cellSizePx = 24;
+
+		const svg = renderNonogramToSvg(nonogram, { cellSizePx });
+		const fontSizeMatch = svg.match(/font-size="([\d.]+)"/);
+		if (!fontSizeMatch) {
+			throw new Error("SVG has no font-size attribute");
+		}
+		const fontSizePx = Number(fontSizeMatch[1]);
+
+		const { width: totalWidth, height: totalHeight } = extractViewBoxSize(svg);
+		const gridStartX = totalWidth - width * cellSizePx;
+		const gridStartY = totalHeight - height * cellSizePx;
+		const rowClueTexts = extractTexts(svg)
+			.filter((text) => text.x < gridStartX && text.y >= gridStartY)
+			.sort((a, b) => a.x - b.x);
+		const slotSpacing = rowClueTexts[1].x - rowClueTexts[0].x;
+
+		expect(slotSpacing).toBeLessThan(cellSizePx);
+		expect(slotSpacing).toBeGreaterThan(fontSizePx * 1.15);
+	});
 });

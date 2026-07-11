@@ -29,6 +29,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The editor page now remembers the last reMarkable destination folder you sent to, pre-filling it automatically on your next visit; clearing the field before sending forgets it again
 - The editor page now has an "Include solution on page 2" option: when enabled, the downloaded or sent PDF gets a second page showing the solved grid, so you can check your answer without leaving the tablet
 
+### Changed
+
+- Row and column clue numbers in the live preview and the PDF are now packed more tightly together, leaving more room for the puzzle grid itself while staying just as readable, especially on grids with many clues per row or column
+
 ### Fixed
 
 - The downloaded and sent PDF is now always a blank puzzle grid showing only the row/column clues, instead of showing the drawn solution with cells already filled in — the live in-browser preview still shows your drawing as-is while you edit it

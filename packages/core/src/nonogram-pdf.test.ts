@@ -1,5 +1,5 @@
 import { inflateSync } from "node:zlib";
-import { PDFDocument } from "pdf-lib";
+import { PDFDocument, StandardFonts } from "pdf-lib";
 import { describe, expect, it } from "vitest";
 import { computeNonogramClues } from "./nonogram-clues.js";
 import {
@@ -48,6 +48,45 @@ function countCellRectangles(pdfBytes: Uint8Array, fillRgb: string): number {
 function countTextDraws(pdfBytes: Uint8Array): number {
 	const content = decompressAllContentStreams(pdfBytes).join("\n");
 	return (content.match(/Tj$/gm) || []).length;
+}
+
+interface PdfTextOp {
+	x: number;
+	y: number;
+	fontSize: number;
+	text: string;
+}
+
+function hexToText(hex: string): string {
+	const bytePairs = hex.match(/../g) || [];
+	return bytePairs
+		.map((bytePair) => String.fromCharCode(Number.parseInt(bytePair, 16)))
+		.join("");
+}
+
+// A drawText() block sets the font/size via "/FontX <size> Tf", positions the
+// text origin via "1 0 0 1 x y Tm", then writes the hex-encoded glyph string
+// followed by "Tj" (pdf-lib's Helvetica embedding uses WinAnsiEncoding, so
+// hex bytes map 1:1 to ASCII for the digits used in clue labels).
+function extractTextOps(pdfBytes: Uint8Array): PdfTextOp[] {
+	const blocks = decompressAllContentStreams(pdfBytes).join("\n").split(/^Q$/m);
+
+	return blocks.flatMap((block) => {
+		const fontSizeMatch = block.match(/^\/\S+ ([\d.]+) Tf$/m);
+		const positionMatch = block.match(/^1 0 0 1 (-?[\d.]+) (-?[\d.]+) Tm$/m);
+		const textMatch = block.match(/^<([0-9A-Fa-f]+)> Tj$/m);
+		if (!fontSizeMatch || !positionMatch || !textMatch) {
+			return [];
+		}
+		return [
+			{
+				x: Number(positionMatch[1]),
+				y: Number(positionMatch[2]),
+				fontSize: Number(fontSizeMatch[1]),
+				text: hexToText(textMatch[1]),
+			},
+		];
+	});
 }
 
 function buildGrid(width: number, height: number, fill: boolean): boolean[][] {
@@ -437,5 +476,67 @@ describe("renderNonogramToPdf", () => {
 		await expect(
 			renderNonogramToPdf(invalidNonogram, { includeSolution: true }),
 		).rejects.toThrow();
+	});
+
+	it("gives grid cells a larger size than the old one-full-cell-per-clue margin formula would have, for a grid with several clues per row/column", async () => {
+		const width = 12;
+		const height = 12;
+		const cells = Array.from({ length: height }, () =>
+			Array.from({ length: width }, (_, column) => column % 2 === 0),
+		);
+		const nonogram = createNonogram(width, height, cells);
+		const { rowClues, columnClues } = computeNonogramClues(nonogram);
+		const leftMarginCells = Math.max(...rowClues.map((clues) => clues.length));
+		const topMarginCells = Math.max(
+			...columnClues.map((clues) => clues.length),
+		);
+
+		// Mirrors PAGE_MARGIN_PT in nonogram-pdf.ts (not exported): reproduces
+		// what the cell size would have been under the previous formula, where
+		// the margin used one full grid cell per clue slot.
+		const pageMarginPt = 24;
+		const drawableWidth = REMARKABLE_2_PAGE_WIDTH_PT - 2 * pageMarginPt;
+		const drawableHeight = REMARKABLE_2_PAGE_HEIGHT_PT - 2 * pageMarginPt;
+		const oldCellSize = Math.min(
+			drawableWidth / (leftMarginCells + width),
+			drawableHeight / (topMarginCells + height),
+		);
+
+		const pdfBytes = await renderNonogramToPdf(nonogram);
+		const rects = extractRectOps(pdfBytes);
+		const firstRowY = rects[0].y;
+		const sameRowXs = rects
+			.filter((rect) => rect.y === firstRowY)
+			.map((rect) => rect.x)
+			.sort((a, b) => a - b);
+		const actualCellSize = sameRowXs[1] - sameRowXs[0];
+
+		expect(leftMarginCells).toBeGreaterThan(1);
+		// A meaningful margin (not just floating-point noise from PDF number
+		// serialization) above the old formula's cell size.
+		expect(actualCellSize).toBeGreaterThan(oldCellSize * 1.01);
+	});
+
+	it("keeps a two-digit clue number from overlapping the number next to it in the same row", async () => {
+		const width = 15;
+		const height = 1;
+		const row = [...Array(11).fill(true), false, ...Array(3).fill(true)];
+		const nonogram = createNonogram(width, height, [row]);
+		const { rowClues } = computeNonogramClues(nonogram);
+		expect(rowClues[0]).toEqual([11, 3]);
+
+		const pdfBytes = await renderNonogramToPdf(nonogram);
+		const textOps = extractTextOps(pdfBytes);
+		const elevenOp = textOps.find((op) => op.text === "11");
+		const threeOp = textOps.find((op) => op.text === "3");
+		if (!elevenOp || !threeOp) {
+			throw new Error("expected clue text draws for '11' and '3' not found");
+		}
+
+		const referenceDoc = await PDFDocument.create();
+		const helvetica = await referenceDoc.embedFont(StandardFonts.Helvetica);
+		const elevenWidth = helvetica.widthOfTextAtSize("11", elevenOp.fontSize);
+
+		expect(elevenOp.x + elevenWidth).toBeLessThanOrEqual(threeOp.x);
 	});
 });
