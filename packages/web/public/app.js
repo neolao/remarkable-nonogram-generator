@@ -36,6 +36,11 @@ function initNonogramList() {
 		link.className = "nonogram-link";
 		link.href = `./editor.html?id=${encodeURIComponent(nonogram.id)}`;
 
+		const thumbnail = document.createElement("img");
+		thumbnail.className = "nonogram-thumbnail";
+		thumbnail.alt = "";
+		thumbnail.src = `/api/nonograms/${encodeURIComponent(nonogram.id)}/preview`;
+
 		const name = document.createElement("span");
 		name.className = "nonogram-name";
 		name.textContent = nonogram.name;
@@ -44,7 +49,7 @@ function initNonogramList() {
 		size.className = "nonogram-size";
 		size.textContent = `${nonogram.width} × ${nonogram.height}`;
 
-		link.append(name, size);
+		link.append(thumbnail, name, size);
 
 		const deleteButton = document.createElement("button");
 		deleteButton.className = "button button-danger nonogram-delete";

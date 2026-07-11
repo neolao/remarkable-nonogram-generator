@@ -475,3 +475,59 @@ describe("DELETE /api/nonograms/:id", () => {
 		expect(response.statusCode).toBe(404);
 	});
 });
+
+describe("GET /api/nonograms/:id/preview", () => {
+	it("returns 200 with the rendered SVG matching the saved nonogram's actual cells", async () => {
+		const store = createFileNonogramStore(nonogramsPath);
+		const saved = await store.save({
+			name: "First puzzle",
+			nonogram: sampleNonogram,
+		});
+		const app = buildServer({ credentialsPath, nonogramsPath });
+
+		const response = await app.inject({
+			method: "GET",
+			url: `/api/nonograms/${saved.id}/preview`,
+		});
+
+		expect(response.statusCode).toBe(200);
+		expect(response.headers["content-type"]).toMatch(/image\/svg\+xml/);
+		expect(response.body).toBe(renderNonogramToSvg(sampleNonogram));
+	});
+
+	it("returns 200 with a valid SVG for an entirely empty saved grid", async () => {
+		const store = createFileNonogramStore(nonogramsPath);
+		const emptyNonogram: Nonogram = {
+			width: 2,
+			height: 2,
+			cells: [
+				[false, false],
+				[false, false],
+			],
+		};
+		const saved = await store.save({
+			name: "Empty puzzle",
+			nonogram: emptyNonogram,
+		});
+		const app = buildServer({ credentialsPath, nonogramsPath });
+
+		const response = await app.inject({
+			method: "GET",
+			url: `/api/nonograms/${saved.id}/preview`,
+		});
+
+		expect(response.statusCode).toBe(200);
+		expect(response.body).toBe(renderNonogramToSvg(emptyNonogram));
+	});
+
+	it("returns 404 for an unknown id", async () => {
+		const app = buildServer({ credentialsPath, nonogramsPath });
+
+		const response = await app.inject({
+			method: "GET",
+			url: "/api/nonograms/does-not-exist/preview",
+		});
+
+		expect(response.statusCode).toBe(404);
+	});
+});

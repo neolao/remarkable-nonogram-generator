@@ -126,6 +126,21 @@ async function handleUpdate(
 	});
 }
 
+async function handlePreviewSaved(
+	store: NonogramStore,
+	request: FastifyRequest<{ Params: { id: string } }>,
+	reply: FastifyReply,
+) {
+	const saved = await store.load(request.params.id);
+	if (!saved) {
+		reply.code(404);
+		return { error: "Nonogram not found" };
+	}
+
+	reply.type("image/svg+xml");
+	return renderNonogramToSvg(saved.nonogram);
+}
+
 async function handleDelete(
 	store: NonogramStore,
 	request: FastifyRequest<{ Params: { id: string } }>,
@@ -168,5 +183,9 @@ export function registerNonogramRoutes(
 	app.delete<{ Params: { id: string } }>(
 		"/api/nonograms/:id",
 		(request, reply) => handleDelete(store, request, reply),
+	);
+	app.get<{ Params: { id: string } }>(
+		"/api/nonograms/:id/preview",
+		(request, reply) => handlePreviewSaved(store, request, reply),
 	);
 }
