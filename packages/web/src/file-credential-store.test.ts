@@ -2,7 +2,7 @@ import { mkdtemp, rm, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { createFileCredentialStore } from "./remarkable-credential-store.js";
+import { createFileCredentialStore } from "./file-credential-store.js";
 
 let workDir: string;
 

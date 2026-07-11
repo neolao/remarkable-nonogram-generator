@@ -1,12 +1,15 @@
+import { submitPairingCode } from "./remarkable-pairing.js";
+
 function createEmptyCells(width, height) {
 	return Array.from({ length: height }, () =>
 		Array.from({ length: width }, () => false),
 	);
 }
 
-// Mirrors the rules tested in packages/web/src/nonogram-client-clues.ts;
-// duplicated here because this static page runs unmodified in the browser,
-// with no build step available to import the compiled/tested module.
+// Mirrors the rules tested in packages/core/src/nonogram-clues.ts (via
+// packages/web/src/nonogram-client-clues.ts); duplicated here because this
+// static page runs unmodified in the browser, with no build step available
+// to import the compiled/tested module.
 function computeLineClues(line) {
 	const clues = [];
 	let currentRunLength = 0;
@@ -125,67 +128,73 @@ function readRemarkableFolderCookie(cookieHeader) {
 	}
 }
 
-function initEditor() {
-	const statusElement = document.getElementById("editor-status");
-	const errorElement = document.getElementById("editor-error");
-	const sizeSection = document.getElementById("size-section");
-	const widthInput = document.getElementById("grid-width");
-	const heightInput = document.getElementById("grid-height");
-	const sizeSubmit = document.getElementById("size-submit");
-	const sizeError = document.getElementById("size-error");
-	const boardElement = document.getElementById("nonogram-board");
-	const gridElement = document.getElementById("nonogram-grid");
-	const rowCluesElement = document.getElementById("row-clues");
-	const columnCluesElement = document.getElementById("column-clues");
-	const editorActions = document.getElementById("editor-actions");
-	const nameInput = document.getElementById("nonogram-name");
-	const saveButton = document.getElementById("save-button");
-	const saveError = document.getElementById("save-error");
-	const saveStatus = document.getElementById("save-status");
-	const previewCard = document.getElementById("preview-card");
-	const previewImage = document.getElementById("nonogram-preview");
-	const downloadButton = document.getElementById("download-button");
-	const includeSolutionCheckbox = document.getElementById("include-solution");
-	const remarkableFolderInput = document.getElementById("remarkable-folder");
-	const sendButton = document.getElementById("send-button");
-	const sendStatus = document.getElementById("send-status");
-	const pairingSection = document.getElementById("pairing-section");
-	const pairingCodeInput = document.getElementById("pairing-code");
-	const pairingSubmit = document.getElementById("pairing-submit");
-	const pairingError = document.getElementById("pairing-error");
-
-	const params = new URLSearchParams(window.location.search);
-	let currentId = params.get("id");
-	let lastDownloadObjectUrl = null;
-	const grid = { width: 0, height: 0, cells: [] };
-
-	remarkableFolderInput.value = readRemarkableFolderCookie(document.cookie);
-
-	const renderClues = (width, height, cells) => {
-		const { rowClues, columnClues } = computeClientNonogramClues(cells);
-
-		rowCluesElement.style.setProperty("--grid-rows", String(height));
-		rowCluesElement.innerHTML = "";
-		for (const clues of rowClues) {
-			const rowClueElement = document.createElement("div");
-			rowClueElement.className = "row-clue";
-			rowClueElement.textContent = clues.join(" ");
-			rowCluesElement.append(rowClueElement);
-		}
-
-		columnCluesElement.style.setProperty("--grid-columns", String(width));
-		columnCluesElement.innerHTML = "";
-		for (const clues of columnClues) {
-			const columnClueElement = document.createElement("div");
-			columnClueElement.className = "column-clue";
-			columnClueElement.textContent = clues.join("\n");
-			columnCluesElement.append(columnClueElement);
-		}
+function queryEditorElements() {
+	return {
+		statusElement: document.getElementById("editor-status"),
+		errorElement: document.getElementById("editor-error"),
+		sizeSection: document.getElementById("size-section"),
+		widthInput: document.getElementById("grid-width"),
+		heightInput: document.getElementById("grid-height"),
+		sizeSubmit: document.getElementById("size-submit"),
+		sizeError: document.getElementById("size-error"),
+		boardElement: document.getElementById("nonogram-board"),
+		gridElement: document.getElementById("nonogram-grid"),
+		rowCluesElement: document.getElementById("row-clues"),
+		columnCluesElement: document.getElementById("column-clues"),
+		editorActions: document.getElementById("editor-actions"),
+		nameInput: document.getElementById("nonogram-name"),
+		saveButton: document.getElementById("save-button"),
+		saveError: document.getElementById("save-error"),
+		saveStatus: document.getElementById("save-status"),
+		previewCard: document.getElementById("preview-card"),
+		previewImage: document.getElementById("nonogram-preview"),
+		downloadButton: document.getElementById("download-button"),
+		includeSolutionCheckbox: document.getElementById("include-solution"),
+		remarkableFolderInput: document.getElementById("remarkable-folder"),
+		sendButton: document.getElementById("send-button"),
+		sendStatus: document.getElementById("send-status"),
+		pairingSection: document.getElementById("pairing-section"),
+		pairingCodeInput: document.getElementById("pairing-code"),
+		pairingSubmit: document.getElementById("pairing-submit"),
+		pairingError: document.getElementById("pairing-error"),
 	};
+}
 
-	const updatePreviewAndDownload = async (width, height, cells) => {
-		const nonogram = { width, height, cells };
+function renderClues(elements, width, height, cells) {
+	const { rowClues, columnClues } = computeClientNonogramClues(cells);
 
+	elements.rowCluesElement.style.setProperty("--grid-rows", String(height));
+	elements.rowCluesElement.innerHTML = "";
+	for (const clues of rowClues) {
+		const rowClueElement = document.createElement("div");
+		rowClueElement.className = "row-clue";
+		rowClueElement.textContent = clues.join(" ");
+		elements.rowCluesElement.append(rowClueElement);
+	}
+
+	elements.columnCluesElement.style.setProperty(
+		"--grid-columns",
+		String(width),
+	);
+	elements.columnCluesElement.innerHTML = "";
+	for (const clues of columnClues) {
+		const columnClueElement = document.createElement("div");
+		columnClueElement.className = "column-clue";
+		columnClueElement.textContent = clues.join("\n");
+		elements.columnCluesElement.append(columnClueElement);
+	}
+}
+
+async function updatePreviewAndDownload(
+	elements,
+	downloadState,
+	width,
+	height,
+	cells,
+) {
+	const nonogram = { width, height, cells };
+
+	try {
 		const previewResponse = await fetch("/api/nonograms/preview", {
 			method: "POST",
 			headers: { "content-type": "application/json" },
@@ -194,9 +203,9 @@ function initEditor() {
 
 		if (previewResponse.ok) {
 			const svgMarkup = await previewResponse.text();
-			previewImage.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgMarkup)}`;
-			previewImage.style.display = "block";
-			previewCard.style.display = "block";
+			elements.previewImage.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgMarkup)}`;
+			elements.previewImage.style.display = "block";
+			elements.previewCard.style.display = "block";
 		}
 
 		const generateResponse = await fetch("/api/nonograms/generate", {
@@ -204,232 +213,275 @@ function initEditor() {
 			headers: { "content-type": "application/json" },
 			body: JSON.stringify({
 				nonogram,
-				includeSolution: includeSolutionCheckbox.checked,
+				includeSolution: elements.includeSolutionCheckbox.checked,
 			}),
 		});
 
 		if (generateResponse.ok) {
-			if (lastDownloadObjectUrl) {
-				URL.revokeObjectURL(lastDownloadObjectUrl);
+			if (downloadState.objectUrl) {
+				URL.revokeObjectURL(downloadState.objectUrl);
 			}
 			const pdfBlob = await generateResponse.blob();
-			lastDownloadObjectUrl = URL.createObjectURL(pdfBlob);
-			downloadButton.style.display = "inline";
-			previewCard.style.display = "block";
+			downloadState.objectUrl = URL.createObjectURL(pdfBlob);
+			elements.downloadButton.style.display = "inline";
+			elements.previewCard.style.display = "block";
 		}
-	};
+	} catch {
+		elements.errorElement.textContent =
+			"Could not reach the server to refresh the preview. Check your connection and try again.";
+	}
+}
 
-	includeSolutionCheckbox.addEventListener("change", () => {
-		if (grid.cells.length > 0) {
-			updatePreviewAndDownload(grid.width, grid.height, grid.cells);
-		}
-	});
+function renderGrid(elements, grid, downloadState, width, height, cells) {
+	grid.width = width;
+	grid.height = height;
+	grid.cells = cells;
 
-	downloadButton.addEventListener("click", () => {
-		if (!lastDownloadObjectUrl) {
-			return;
-		}
-		const temporaryLink = document.createElement("a");
-		temporaryLink.href = lastDownloadObjectUrl;
-		temporaryLink.download = "nonogram.pdf";
-		temporaryLink.click();
-	});
+	elements.gridElement.innerHTML = "";
+	elements.gridElement.style.setProperty("--grid-columns", String(width));
+	elements.gridElement.style.setProperty("--grid-rows", String(height));
 
-	const renderGrid = (width, height, cells) => {
-		grid.width = width;
-		grid.height = height;
-		grid.cells = cells;
+	for (let row = 0; row < height; row++) {
+		for (let column = 0; column < width; column++) {
+			const cell = document.createElement("button");
+			cell.type = "button";
+			cell.className = "nonogram-cell";
+			cell.classList.toggle("filled", cells[row][column]);
+			cell.setAttribute("aria-pressed", String(cells[row][column]));
 
-		gridElement.innerHTML = "";
-		gridElement.style.setProperty("--grid-columns", String(width));
-		gridElement.style.setProperty("--grid-rows", String(height));
-
-		for (let row = 0; row < height; row++) {
-			for (let column = 0; column < width; column++) {
-				const cell = document.createElement("button");
-				cell.type = "button";
-				cell.className = "nonogram-cell";
+			cell.addEventListener("click", () => {
+				cells[row][column] = !cells[row][column];
 				cell.classList.toggle("filled", cells[row][column]);
 				cell.setAttribute("aria-pressed", String(cells[row][column]));
+				renderClues(elements, width, height, cells);
+				updatePreviewAndDownload(elements, downloadState, width, height, cells);
+			});
 
-				cell.addEventListener("click", () => {
-					cells[row][column] = !cells[row][column];
-					cell.classList.toggle("filled", cells[row][column]);
-					cell.setAttribute("aria-pressed", String(cells[row][column]));
-					renderClues(width, height, cells);
-					updatePreviewAndDownload(width, height, cells);
-				});
-
-				gridElement.append(cell);
-			}
+			elements.gridElement.append(cell);
 		}
+	}
 
-		renderClues(width, height, cells);
-		boardElement.classList.add("visible");
-		updatePreviewAndDownload(width, height, cells);
-	};
+	renderClues(elements, width, height, cells);
+	elements.boardElement.classList.add("visible");
+	updatePreviewAndDownload(elements, downloadState, width, height, cells);
+}
 
-	const showGrid = (name, nonogram) => {
-		statusElement.textContent = name
-			? `Editing "${name}" (${nonogram.width} × ${nonogram.height})`
-			: `New nonogram (${nonogram.width} × ${nonogram.height})`;
-		sizeSection.style.display = "none";
-		nameInput.value = name ?? "";
-		editorActions.style.display = "flex";
-		renderGrid(
-			nonogram.width,
-			nonogram.height,
-			nonogram.cells.map((row) => [...row]),
-		);
-	};
+function showGrid(elements, grid, downloadState, name, nonogram) {
+	elements.statusElement.textContent = name
+		? `Editing "${name}" (${nonogram.width} × ${nonogram.height})`
+		: `New nonogram (${nonogram.width} × ${nonogram.height})`;
+	elements.sizeSection.style.display = "none";
+	elements.nameInput.value = name ?? "";
+	elements.editorActions.style.display = "flex";
+	renderGrid(
+		elements,
+		grid,
+		downloadState,
+		nonogram.width,
+		nonogram.height,
+		nonogram.cells.map((row) => [...row]),
+	);
+}
 
-	const handleSave = async () => {
-		saveError.textContent = "";
-		saveStatus.textContent = "";
+async function handleSave(elements, grid, editorState) {
+	elements.saveError.textContent = "";
+	elements.saveStatus.textContent = "";
 
-		const result = buildNonogramSaveRequest(currentId, nameInput.value, {
+	const result = buildNonogramSaveRequest(
+		editorState.currentId,
+		elements.nameInput.value,
+		{
 			width: grid.width,
 			height: grid.height,
 			cells: grid.cells,
-		});
+		},
+	);
 
-		if (!result.ok) {
-			saveError.textContent = result.error;
-			return;
-		}
+	if (!result.ok) {
+		elements.saveError.textContent = result.error;
+		return;
+	}
 
-		const response = await fetch(result.request.url, {
+	let response;
+	try {
+		response = await fetch(result.request.url, {
 			method: result.request.method,
 			headers: { "content-type": "application/json" },
 			body: JSON.stringify(result.request.body),
 		});
+	} catch {
+		elements.saveError.textContent =
+			"Could not reach the server. Check your connection and try again.";
+		return;
+	}
 
-		if (!response.ok) {
-			const body = await response.json();
-			saveError.textContent = body.error ?? "Failed to save this nonogram";
-			return;
-		}
-
-		const saved = await response.json();
-		currentId = saved.id;
-		saveStatus.textContent = "Saved.";
-	};
-
-	saveButton.addEventListener("click", handleSave);
-
-	const sendToRemarkable = async () => {
-		const result = buildNonogramSendRequest(
-			currentId,
-			remarkableFolderInput.value,
-			includeSolutionCheckbox.checked,
-		);
-
-		if (!result.ok) {
-			sendStatus.textContent = result.error;
-			return;
-		}
-
-		// biome-ignore lint/suspicious/noDocumentCookie: Cookie Store API isn't supported everywhere and this static page has no build step for a polyfill
-		document.cookie = buildRemarkableFolderCookieAssignment(
-			remarkableFolderInput.value,
-		);
-
-		sendStatus.textContent = "Sending to reMarkable...";
-		pairingSection.style.display = "none";
-
-		const response = await fetch(result.request.url, {
-			method: result.request.method,
-			headers: { "content-type": "application/json" },
-			body: JSON.stringify(result.request.body),
-		});
-
-		if (response.ok) {
-			sendStatus.textContent = "Nonogram sent to reMarkable.";
-			return;
-		}
-
+	if (!response.ok) {
 		const body = await response.json();
+		elements.saveError.textContent =
+			body.error ?? "Failed to save this nonogram";
+		return;
+	}
 
-		if (body.error === "not_authenticated") {
-			sendStatus.textContent = "";
-			pairingSection.style.display = "block";
-			return;
-		}
+	const saved = await response.json();
+	editorState.currentId = saved.id;
+	elements.saveStatus.textContent = "Saved.";
+}
 
-		sendStatus.textContent = body.error ?? "Failed to send this nonogram";
-	};
+async function sendToRemarkable(elements, editorState) {
+	const result = buildNonogramSendRequest(
+		editorState.currentId,
+		elements.remarkableFolderInput.value,
+		elements.includeSolutionCheckbox.checked,
+	);
 
-	sendButton.addEventListener("click", () => {
-		sendToRemarkable();
-	});
+	if (!result.ok) {
+		elements.sendStatus.textContent = result.error;
+		return;
+	}
 
-	pairingSubmit.addEventListener("click", async () => {
-		pairingError.textContent = "";
-		const pairingCode = pairingCodeInput.value.trim();
+	// biome-ignore lint/suspicious/noDocumentCookie: Cookie Store API isn't supported everywhere and this static page has no build step for a polyfill
+	document.cookie = buildRemarkableFolderCookieAssignment(
+		elements.remarkableFolderInput.value,
+	);
 
-		if (!pairingCode) {
-			pairingError.textContent = "Pairing code is required";
-			return;
-		}
+	elements.sendStatus.textContent = "Sending to reMarkable...";
+	elements.pairingSection.style.display = "none";
 
-		const response = await fetch("/api/remarkable/pair", {
-			method: "POST",
+	let response;
+	try {
+		response = await fetch(result.request.url, {
+			method: result.request.method,
 			headers: { "content-type": "application/json" },
-			body: JSON.stringify({ pairingCode }),
+			body: JSON.stringify(result.request.body),
 		});
+	} catch {
+		elements.sendStatus.textContent =
+			"Could not reach the server. Check your connection and try again.";
+		return;
+	}
 
-		if (!response.ok) {
-			const body = await response.json();
-			pairingError.textContent = body.error ?? "Pairing failed";
-			return;
-		}
+	if (response.ok) {
+		elements.sendStatus.textContent = "Nonogram sent to reMarkable.";
+		return;
+	}
 
-		pairingCodeInput.value = "";
-		pairingError.textContent = "";
-		await sendToRemarkable();
-	});
+	const body = await response.json();
 
-	const loadExisting = async () => {
-		const response = await fetch(`/api/nonograms/${currentId}`);
+	if (body.error === "not_authenticated") {
+		elements.sendStatus.textContent = "";
+		elements.pairingSection.style.display = "block";
+		return;
+	}
 
-		if (!response.ok) {
-			statusElement.textContent = "";
-			errorElement.textContent = "This nonogram could not be found.";
-			return;
-		}
+	elements.sendStatus.textContent =
+		body.error ?? "Failed to send this nonogram";
+}
 
-		const saved = await response.json();
-		showGrid(saved.name, saved.nonogram);
-	};
+async function loadExisting(elements, grid, downloadState, editorState) {
+	let response;
+	try {
+		response = await fetch(`/api/nonograms/${editorState.currentId}`);
+	} catch {
+		elements.statusElement.textContent = "";
+		elements.errorElement.textContent =
+			"Could not reach the server. Check your connection and try again.";
+		return;
+	}
 
-	const handleSizeSubmit = async () => {
-		sizeError.textContent = "";
-		const width = Number(widthInput.value);
-		const height = Number(heightInput.value);
-		const cells = createEmptyCells(width, height);
+	if (!response.ok) {
+		elements.statusElement.textContent = "";
+		elements.errorElement.textContent = "This nonogram could not be found.";
+		return;
+	}
 
-		const response = await fetch("/api/nonograms/preview", {
+	const saved = await response.json();
+	showGrid(elements, grid, downloadState, saved.name, saved.nonogram);
+}
+
+async function handleSizeSubmit(elements, grid, downloadState) {
+	elements.sizeError.textContent = "";
+	const width = Number(elements.widthInput.value);
+	const height = Number(elements.heightInput.value);
+	const cells = createEmptyCells(width, height);
+
+	let response;
+	try {
+		response = await fetch("/api/nonograms/preview", {
 			method: "POST",
 			headers: { "content-type": "application/json" },
 			body: JSON.stringify({ nonogram: { width, height, cells } }),
 		});
+	} catch {
+		elements.sizeError.textContent =
+			"Could not reach the server. Check your connection and try again.";
+		return;
+	}
 
-		if (!response.ok) {
-			const body = await response.json();
-			sizeError.textContent = body.error ?? "Invalid grid size";
+	if (!response.ok) {
+		const body = await response.json();
+		elements.sizeError.textContent = body.error ?? "Invalid grid size";
+		return;
+	}
+
+	showGrid(elements, grid, downloadState, null, { width, height, cells });
+}
+
+function initEditor() {
+	const elements = queryEditorElements();
+	const params = new URLSearchParams(window.location.search);
+	const editorState = { currentId: params.get("id") };
+	const downloadState = { objectUrl: null };
+	const grid = { width: 0, height: 0, cells: [] };
+
+	elements.remarkableFolderInput.value = readRemarkableFolderCookie(
+		document.cookie,
+	);
+
+	elements.includeSolutionCheckbox.addEventListener("change", () => {
+		if (grid.cells.length > 0) {
+			updatePreviewAndDownload(
+				elements,
+				downloadState,
+				grid.width,
+				grid.height,
+				grid.cells,
+			);
+		}
+	});
+
+	elements.downloadButton.addEventListener("click", () => {
+		if (!downloadState.objectUrl) {
 			return;
 		}
+		const temporaryLink = document.createElement("a");
+		temporaryLink.href = downloadState.objectUrl;
+		temporaryLink.download = "nonogram.pdf";
+		temporaryLink.click();
+	});
 
-		showGrid(null, { width, height, cells });
-	};
+	elements.saveButton.addEventListener("click", () =>
+		handleSave(elements, grid, editorState),
+	);
 
-	if (currentId) {
-		sizeSection.style.display = "none";
-		loadExisting();
+	elements.sendButton.addEventListener("click", () =>
+		sendToRemarkable(elements, editorState),
+	);
+
+	elements.pairingSubmit.addEventListener("click", () =>
+		submitPairingCode(elements.pairingCodeInput, elements.pairingError, () =>
+			sendToRemarkable(elements, editorState),
+		),
+	);
+
+	if (editorState.currentId) {
+		elements.sizeSection.style.display = "none";
+		loadExisting(elements, grid, downloadState, editorState);
 	} else {
-		statusElement.textContent = "";
-		sizeSection.style.display = "block";
-		sizeSubmit.addEventListener("click", handleSizeSubmit);
+		elements.statusElement.textContent = "";
+		elements.sizeSection.style.display = "block";
+		elements.sizeSubmit.addEventListener("click", () =>
+			handleSizeSubmit(elements, grid, downloadState),
+		);
 	}
 }
 

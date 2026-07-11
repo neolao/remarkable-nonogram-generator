@@ -2,8 +2,7 @@ import {
 	authenticate,
 	type CredentialStore,
 	type NonogramStore,
-	renderNonogramToPdf,
-	uploadPdf,
+	sendNonogramToRemarkable,
 } from "@remarkable-nonogram-generator/core";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 
@@ -52,43 +51,30 @@ async function handleSendNonogram(
 	}>,
 	reply: FastifyReply,
 ) {
-	const saved = await nonogramStore.load(request.params.id);
-	if (!saved) {
-		reply.code(404);
-		return { error: "Nonogram not found" };
+	const result = await sendNonogramToRemarkable(
+		nonogramStore,
+		credentialStore,
+		request.params.id,
+		{
+			folder: request.body?.folder,
+			includeSolution: request.body?.includeSolution,
+		},
+	);
+
+	switch (result.outcome) {
+		case "not_found":
+			reply.code(404);
+			return { error: "Nonogram not found" };
+		case "not_authenticated":
+			reply.code(409);
+			return { error: "not_authenticated" };
+		case "auth_failed":
+		case "upload_failed":
+			reply.code(502);
+			return { error: result.message };
+		case "sent":
+			return { visibleName: result.visibleName };
 	}
-
-	const existing = await credentialStore.load();
-	if (!existing) {
-		reply.code(409);
-		return { error: "not_authenticated" };
-	}
-
-	let session: Awaited<ReturnType<typeof authenticate>>;
-	try {
-		session = await authenticate(credentialStore, "");
-	} catch (error) {
-		reply.code(502);
-		return { error: (error as Error).message };
-	}
-
-	const pdfBytes = await renderNonogramToPdf(saved.nonogram, {
-		includeSolution: request.body?.includeSolution,
-	});
-	const visibleName = saved.name;
-	const folder = request.body?.folder;
-
-	try {
-		await uploadPdf(session, `${visibleName}.pdf`, visibleName, {
-			readFile: async () => pdfBytes,
-			folder,
-		});
-	} catch (error) {
-		reply.code(502);
-		return { error: (error as Error).message };
-	}
-
-	return { visibleName };
 }
 
 export function registerRemarkableRoutes(

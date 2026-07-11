@@ -7,7 +7,7 @@ import {
 	renderNonogramToSvg,
 } from "@remarkable-nonogram-generator/core";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { createFileNonogramStore } from "./nonogram-store.js";
+import { createFileNonogramStore } from "./file-nonogram-store.js";
 import { buildServer } from "./server.js";
 
 let workDir: string;

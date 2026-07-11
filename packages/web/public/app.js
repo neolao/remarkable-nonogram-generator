@@ -1,3 +1,5 @@
+import { submitPairingCode } from "./remarkable-pairing.js";
+
 function initNonogramList() {
 	const listElement = document.getElementById("nonogram-list");
 	const emptyElement = document.getElementById("nonogram-list-empty");
@@ -5,7 +7,15 @@ function initNonogramList() {
 
 	const handleDelete = async (id, item) => {
 		errorElement.textContent = "";
-		const response = await fetch(`/api/nonograms/${id}`, { method: "DELETE" });
+
+		let response;
+		try {
+			response = await fetch(`/api/nonograms/${id}`, { method: "DELETE" });
+		} catch {
+			errorElement.textContent =
+				"Could not reach the server. Check your connection and try again.";
+			return;
+		}
 
 		if (!response.ok) {
 			errorElement.textContent = "Failed to delete this nonogram";
@@ -50,7 +60,15 @@ function initNonogramList() {
 
 	const loadList = async () => {
 		errorElement.textContent = "";
-		const response = await fetch("/api/nonograms");
+
+		let response;
+		try {
+			response = await fetch("/api/nonograms");
+		} catch {
+			errorElement.textContent =
+				"Could not reach the server. Check your connection and try again.";
+			return;
+		}
 
 		if (!response.ok) {
 			errorElement.textContent = "Failed to load saved nonograms";
@@ -94,7 +112,15 @@ function initRemarkableConnection() {
 	};
 
 	const refreshStatus = async () => {
-		const response = await fetch("/api/remarkable/status");
+		let response;
+		try {
+			response = await fetch("/api/remarkable/status");
+		} catch {
+			statusElement.textContent =
+				"Could not reach the server. Check your connection and try again.";
+			return;
+		}
+
 		const body = await response.json();
 
 		if (body.authenticated) {
@@ -104,31 +130,9 @@ function initRemarkableConnection() {
 		}
 	};
 
-	pairingSubmit.addEventListener("click", async () => {
-		pairingError.textContent = "";
-		const pairingCode = pairingCodeInput.value.trim();
-
-		if (!pairingCode) {
-			pairingError.textContent = "Pairing code is required";
-			return;
-		}
-
-		const response = await fetch("/api/remarkable/pair", {
-			method: "POST",
-			headers: { "content-type": "application/json" },
-			body: JSON.stringify({ pairingCode }),
-		});
-
-		if (!response.ok) {
-			const body = await response.json();
-			pairingError.textContent = body.error ?? "Pairing failed";
-			return;
-		}
-
-		pairingCodeInput.value = "";
-		pairingError.textContent = "";
-		showConnected();
-	});
+	pairingSubmit.addEventListener("click", () =>
+		submitPairingCode(pairingCodeInput, pairingError, showConnected),
+	);
 
 	refreshStatus();
 }

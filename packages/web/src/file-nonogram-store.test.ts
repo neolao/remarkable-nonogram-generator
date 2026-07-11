@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { Nonogram } from "@remarkable-nonogram-generator/core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createFileNonogramStore } from "./nonogram-store.js";
+import { createFileNonogramStore } from "./file-nonogram-store.js";
 
 let workDir: string;
 
@@ -166,6 +166,16 @@ describe("createFileNonogramStore", () => {
 				updatedAt: saved.updatedAt,
 			},
 		]);
+	});
+
+	it("reports the corrupted file path when loading a nonogram with invalid JSON", async () => {
+		const directoryPath = join(workDir, "nonograms");
+		const store = createFileNonogramStore(directoryPath);
+		await mkdir(directoryPath, { recursive: true });
+		const corruptFilePath = join(directoryPath, "corrupt-id.json");
+		await writeFile(corruptFilePath, "{ not valid json");
+
+		await expect(store.load("corrupt-id")).rejects.toThrow(corruptFilePath);
 	});
 
 	it("rejects an id containing path separators to prevent escaping the store directory", async () => {

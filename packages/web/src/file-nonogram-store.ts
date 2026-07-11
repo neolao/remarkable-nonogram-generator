@@ -32,12 +32,18 @@ function filePathFor(directoryPath: string, id: string): string {
 async function readSavedNonogram(
 	filePath: string,
 ): Promise<SavedNonogram | null> {
+	let raw: string;
 	try {
-		const raw = await readFile(filePath, "utf8");
-		return JSON.parse(raw) as SavedNonogram;
+		raw = await readFile(filePath, "utf8");
 	} catch (error) {
 		if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
 		throw error;
+	}
+
+	try {
+		return JSON.parse(raw) as SavedNonogram;
+	} catch (cause) {
+		throw new Error(`Corrupted nonogram file: ${filePath}`, { cause });
 	}
 }
 
@@ -58,7 +64,9 @@ export function createFileNonogramStore(directoryPath: string): NonogramStore {
 					try {
 						return await readSavedNonogram(join(directoryPath, entry));
 					} catch (error) {
-						if (error instanceof SyntaxError) return null;
+						if ((error as { cause?: unknown }).cause instanceof SyntaxError) {
+							return null;
+						}
 						throw error;
 					}
 				}),

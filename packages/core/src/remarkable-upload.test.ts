@@ -39,13 +39,11 @@ function createFakeSession(overrides: FakeSessionOverrides = {}) {
 }
 
 describe("uploadPdf", () => {
-	it("reads the local file and uploads it under the given visible name", async () => {
+	it("uploads the given PDF bytes under the visible name", async () => {
 		const session = createFakeSession();
-		const readFile = vi.fn(async () => FAKE_PDF_BYTES);
 
-		await uploadPdf(session, "/tmp/nonogram.pdf", "My Nonogram", { readFile });
+		await uploadPdf(session, FAKE_PDF_BYTES, "My Nonogram");
 
-		expect(readFile).toHaveBeenCalledWith("/tmp/nonogram.pdf");
 		// biome-ignore lint/suspicious/noExplicitAny: accessing the fake session's mocked methods
 		expect((session as any).uploadPdf).toHaveBeenCalledWith(
 			"My Nonogram",
@@ -53,28 +51,10 @@ describe("uploadPdf", () => {
 		);
 	});
 
-	it("rejects without a valid session and never touches the filesystem", async () => {
-		const readFile = vi.fn(async () => FAKE_PDF_BYTES);
-
+	it("rejects without a valid session", async () => {
 		await expect(
-			uploadPdf(undefined, "/tmp/nonogram.pdf", "My Nonogram", { readFile }),
+			uploadPdf(undefined, FAKE_PDF_BYTES, "My Nonogram"),
 		).rejects.toThrow(/session/i);
-
-		expect(readFile).not.toHaveBeenCalled();
-	});
-
-	it("rejects when the local file does not exist, without calling upload", async () => {
-		const session = createFakeSession();
-		const readFile = vi.fn(async () => {
-			throw Object.assign(new Error("ENOENT"), { code: "ENOENT" });
-		});
-
-		await expect(
-			uploadPdf(session, "/tmp/missing.pdf", "My Nonogram", { readFile }),
-		).rejects.toThrow(/not found/i);
-
-		// biome-ignore lint/suspicious/noExplicitAny: accessing the fake session's mocked methods
-		expect((session as any).uploadPdf).not.toHaveBeenCalled();
 	});
 
 	it("wraps an upload failure with a clear error", async () => {
@@ -83,10 +63,9 @@ describe("uploadPdf", () => {
 				throw new Error("server exploded");
 			},
 		});
-		const readFile = vi.fn(async () => FAKE_PDF_BYTES);
 
 		await expect(
-			uploadPdf(session, "/tmp/nonogram.pdf", "My Nonogram", { readFile }),
+			uploadPdf(session, FAKE_PDF_BYTES, "My Nonogram"),
 		).rejects.toThrow(/upload/i);
 	});
 
@@ -111,10 +90,8 @@ describe("uploadPdf", () => {
 				};
 			},
 		});
-		const readFile = vi.fn(async () => FAKE_PDF_BYTES);
 
-		await uploadPdf(session, "/tmp/nonogram.pdf", "My Nonogram", {
-			readFile,
+		await uploadPdf(session, FAKE_PDF_BYTES, "My Nonogram", {
 			folder: "Nonograms",
 		});
 
@@ -137,11 +114,9 @@ describe("uploadPdf", () => {
 				parent: "",
 			}),
 		});
-		const readFile = vi.fn(async () => FAKE_PDF_BYTES);
 
 		await expect(
-			uploadPdf(session, "/tmp/nonogram.pdf", "My Nonogram", {
-				readFile,
+			uploadPdf(session, FAKE_PDF_BYTES, "My Nonogram", {
 				folder: "Missing Folder",
 			}),
 		).rejects.toThrow(/folder/i);
@@ -153,9 +128,8 @@ describe("uploadPdf", () => {
 
 	it("uploads to the root when no folder is specified", async () => {
 		const session = createFakeSession();
-		const readFile = vi.fn(async () => FAKE_PDF_BYTES);
 
-		await uploadPdf(session, "/tmp/nonogram.pdf", "My Nonogram", { readFile });
+		await uploadPdf(session, FAKE_PDF_BYTES, "My Nonogram");
 
 		// biome-ignore lint/suspicious/noExplicitAny: accessing the fake session's mocked methods
 		const fakeSession = session as any;
@@ -172,11 +146,9 @@ describe("uploadPdf", () => {
 				throw new Error("network blip");
 			},
 		});
-		const readFile = vi.fn(async () => FAKE_PDF_BYTES);
 
 		await expect(
-			uploadPdf(session, "/tmp/nonogram.pdf", "My Nonogram", {
-				readFile,
+			uploadPdf(session, FAKE_PDF_BYTES, "My Nonogram", {
 				folder: "Nonograms",
 			}),
 		).rejects.toThrow(/upload/i);

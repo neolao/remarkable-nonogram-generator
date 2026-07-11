@@ -4,11 +4,10 @@ import { join } from "node:path";
 import {
 	authenticate,
 	type Nonogram,
-	renderNonogramToPdf,
-	uploadPdf,
+	sendNonogramToRemarkable,
 } from "@remarkable-nonogram-generator/core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createFileNonogramStore } from "./nonogram-store.js";
+import { createFileNonogramStore } from "./file-nonogram-store.js";
 import { buildServer } from "./server.js";
 
 vi.mock("@remarkable-nonogram-generator/core", async (importOriginal) => {
@@ -19,12 +18,12 @@ vi.mock("@remarkable-nonogram-generator/core", async (importOriginal) => {
 	return {
 		...actual,
 		authenticate: vi.fn(),
-		uploadPdf: vi.fn(),
+		sendNonogramToRemarkable: vi.fn(),
 	};
 });
 
 const authenticateMock = vi.mocked(authenticate);
-const uploadPdfMock = vi.mocked(uploadPdf);
+const sendNonogramToRemarkableMock = vi.mocked(sendNonogramToRemarkable);
 
 let workDir: string;
 let credentialsPath: string;
@@ -46,7 +45,7 @@ beforeEach(async () => {
 	credentialsPath = join(workDir, "credentials.json");
 	nonogramsPath = join(workDir, "nonograms");
 	authenticateMock.mockReset();
-	uploadPdfMock.mockReset();
+	sendNonogramToRemarkableMock.mockReset();
 });
 
 afterEach(async () => {
@@ -136,11 +135,14 @@ describe("POST /api/remarkable/pair", () => {
 });
 
 describe("POST /api/nonograms/:id/send", () => {
-	it("returns 409 not_authenticated when no credentials are stored", async () => {
+	it("returns 409 not_authenticated when the use case reports not_authenticated", async () => {
 		const store = createFileNonogramStore(nonogramsPath);
 		const saved = await store.save({
 			name: "My puzzle",
 			nonogram: sampleNonogram,
+		});
+		sendNonogramToRemarkableMock.mockResolvedValue({
+			outcome: "not_authenticated",
 		});
 		const app = buildServer({ credentialsPath, nonogramsPath });
 
@@ -152,15 +154,10 @@ describe("POST /api/nonograms/:id/send", () => {
 
 		expect(response.statusCode).toBe(409);
 		expect(response.json()).toEqual({ error: "not_authenticated" });
-		expect(authenticateMock).not.toHaveBeenCalled();
-		expect(uploadPdfMock).not.toHaveBeenCalled();
 	});
 
-	it("returns 404 for an unknown nonogram id without attempting authentication", async () => {
-		await writeFile(
-			credentialsPath,
-			JSON.stringify({ deviceToken: "existing-token" }),
-		);
+	it("returns 404 when the use case reports not_found", async () => {
+		sendNonogramToRemarkableMock.mockResolvedValue({ outcome: "not_found" });
 		const app = buildServer({ credentialsPath, nonogramsPath });
 
 		const response = await app.inject({
@@ -170,24 +167,67 @@ describe("POST /api/nonograms/:id/send", () => {
 		});
 
 		expect(response.statusCode).toBe(404);
-		expect(authenticateMock).not.toHaveBeenCalled();
-		expect(uploadPdfMock).not.toHaveBeenCalled();
+		expect(response.json()).toEqual({ error: "Nonogram not found" });
 	});
 
-	it("uploads the rendered PDF and returns the saved name when already authenticated", async () => {
+	it("returns 502 when the use case reports auth_failed", async () => {
 		const store = createFileNonogramStore(nonogramsPath);
 		const saved = await store.save({
 			name: "My puzzle",
 			nonogram: sampleNonogram,
 		});
-		await writeFile(
-			credentialsPath,
-			JSON.stringify({ deviceToken: "existing-token" }),
-		);
-		// biome-ignore lint/suspicious/noExplicitAny: partial fake of the opaque core session type
-		const fakeSession = { fake: "session" } as any;
-		authenticateMock.mockResolvedValue(fakeSession);
-		uploadPdfMock.mockResolvedValue(undefined);
+		sendNonogramToRemarkableMock.mockResolvedValue({
+			outcome: "auth_failed",
+			message: "Failed to authenticate with reMarkable Cloud",
+		});
+		const app = buildServer({ credentialsPath, nonogramsPath });
+
+		const response = await app.inject({
+			method: "POST",
+			url: `/api/nonograms/${saved.id}/send`,
+			payload: {},
+		});
+
+		expect(response.statusCode).toBe(502);
+		expect(response.json()).toEqual({
+			error: "Failed to authenticate with reMarkable Cloud",
+		});
+	});
+
+	it("returns 502 when the use case reports upload_failed", async () => {
+		const store = createFileNonogramStore(nonogramsPath);
+		const saved = await store.save({
+			name: "My puzzle",
+			nonogram: sampleNonogram,
+		});
+		sendNonogramToRemarkableMock.mockResolvedValue({
+			outcome: "upload_failed",
+			message: "Failed to upload the PDF to reMarkable Cloud",
+		});
+		const app = buildServer({ credentialsPath, nonogramsPath });
+
+		const response = await app.inject({
+			method: "POST",
+			url: `/api/nonograms/${saved.id}/send`,
+			payload: {},
+		});
+
+		expect(response.statusCode).toBe(502);
+		expect(response.json()).toEqual({
+			error: "Failed to upload the PDF to reMarkable Cloud",
+		});
+	});
+
+	it("returns the saved name when the use case reports sent", async () => {
+		const store = createFileNonogramStore(nonogramsPath);
+		const saved = await store.save({
+			name: "My puzzle",
+			nonogram: sampleNonogram,
+		});
+		sendNonogramToRemarkableMock.mockResolvedValue({
+			outcome: "sent",
+			visibleName: "My puzzle",
+		});
 		const app = buildServer({ credentialsPath, nonogramsPath });
 
 		const response = await app.inject({
@@ -198,111 +238,38 @@ describe("POST /api/nonograms/:id/send", () => {
 
 		expect(response.statusCode).toBe(200);
 		expect(response.json()).toEqual({ visibleName: "My puzzle" });
-		expect(uploadPdfMock).toHaveBeenCalledWith(
-			fakeSession,
-			expect.any(String),
-			"My puzzle",
-			expect.objectContaining({ folder: undefined }),
-		);
-	});
-
-	it("forwards the requested folder to the upload step", async () => {
-		const store = createFileNonogramStore(nonogramsPath);
-		const saved = await store.save({
-			name: "My puzzle",
-			nonogram: sampleNonogram,
-		});
-		await writeFile(
-			credentialsPath,
-			JSON.stringify({ deviceToken: "existing-token" }),
-		);
-		// biome-ignore lint/suspicious/noExplicitAny: partial fake of the opaque core session type
-		authenticateMock.mockResolvedValue({} as any);
-		uploadPdfMock.mockResolvedValue(undefined);
-		const app = buildServer({ credentialsPath, nonogramsPath });
-
-		const response = await app.inject({
-			method: "POST",
-			url: `/api/nonograms/${saved.id}/send`,
-			payload: { folder: "Puzzles" },
-		});
-
-		expect(response.statusCode).toBe(200);
-		expect(uploadPdfMock).toHaveBeenCalledWith(
+		expect(sendNonogramToRemarkableMock).toHaveBeenCalledWith(
 			expect.anything(),
-			expect.any(String),
-			"My puzzle",
-			expect.objectContaining({ folder: "Puzzles" }),
+			expect.anything(),
+			saved.id,
+			{ folder: undefined, includeSolution: undefined },
 		);
 	});
 
-	it("includes the solution page in the uploaded PDF when includeSolution is true", async () => {
+	it("forwards the requested folder and includeSolution to the use case", async () => {
 		const store = createFileNonogramStore(nonogramsPath);
 		const saved = await store.save({
 			name: "My puzzle",
 			nonogram: sampleNonogram,
 		});
-		await writeFile(
-			credentialsPath,
-			JSON.stringify({ deviceToken: "existing-token" }),
-		);
-		// biome-ignore lint/suspicious/noExplicitAny: partial fake of the opaque core session type
-		authenticateMock.mockResolvedValue({} as any);
-		let capturedReadFile: ((path: string) => Promise<Uint8Array>) | undefined;
-		uploadPdfMock.mockImplementation(
-			async (_session, _filename, _visibleName, options) => {
-				capturedReadFile = options?.readFile;
-			},
-		);
+		sendNonogramToRemarkableMock.mockResolvedValue({
+			outcome: "sent",
+			visibleName: "My puzzle",
+		});
 		const app = buildServer({ credentialsPath, nonogramsPath });
 
 		const response = await app.inject({
 			method: "POST",
 			url: `/api/nonograms/${saved.id}/send`,
-			payload: { includeSolution: true },
+			payload: { folder: "Puzzles", includeSolution: true },
 		});
 
 		expect(response.statusCode).toBe(200);
-		const uploadedBytes = await capturedReadFile?.("unused");
-		const expectedBytes = await renderNonogramToPdf(sampleNonogram, {
-			includeSolution: true,
-		});
-		expect(Buffer.from(uploadedBytes ?? [])).toEqual(
-			Buffer.from(expectedBytes),
-		);
-	});
-
-	it("uploads the usual single-page PDF when includeSolution is not requested", async () => {
-		const store = createFileNonogramStore(nonogramsPath);
-		const saved = await store.save({
-			name: "My puzzle",
-			nonogram: sampleNonogram,
-		});
-		await writeFile(
-			credentialsPath,
-			JSON.stringify({ deviceToken: "existing-token" }),
-		);
-		// biome-ignore lint/suspicious/noExplicitAny: partial fake of the opaque core session type
-		authenticateMock.mockResolvedValue({} as any);
-		let capturedReadFile: ((path: string) => Promise<Uint8Array>) | undefined;
-		uploadPdfMock.mockImplementation(
-			async (_session, _filename, _visibleName, options) => {
-				capturedReadFile = options?.readFile;
-			},
-		);
-		const app = buildServer({ credentialsPath, nonogramsPath });
-
-		const response = await app.inject({
-			method: "POST",
-			url: `/api/nonograms/${saved.id}/send`,
-			payload: {},
-		});
-
-		expect(response.statusCode).toBe(200);
-		const uploadedBytes = await capturedReadFile?.("unused");
-		const expectedBytes = await renderNonogramToPdf(sampleNonogram);
-		expect(Buffer.from(uploadedBytes ?? [])).toEqual(
-			Buffer.from(expectedBytes),
+		expect(sendNonogramToRemarkableMock).toHaveBeenCalledWith(
+			expect.anything(),
+			expect.anything(),
+			saved.id,
+			{ folder: "Puzzles", includeSolution: true },
 		);
 	});
 });

@@ -111,4 +111,28 @@ describe("authenticate", () => {
 			/reMarkable Cloud/i,
 		);
 	});
+
+	it("uses an explicitly injected client instead of the default rmapi-js one", async () => {
+		const store = new InMemoryCredentialStore();
+		const fakeSession = { uploadPdf: vi.fn() };
+		const injectedClient = {
+			register: vi.fn().mockResolvedValue("injected-token"),
+			// biome-ignore lint/suspicious/noExplicitAny: partial fake of the rmapi-js session shape
+			remarkable: vi.fn().mockResolvedValue(fakeSession as any),
+		};
+
+		const session = await authenticate(store, "12345678", {}, injectedClient);
+
+		expect(injectedClient.register).toHaveBeenCalledWith(
+			"12345678",
+			expect.anything(),
+		);
+		expect(injectedClient.remarkable).toHaveBeenCalledWith(
+			"injected-token",
+			expect.anything(),
+		);
+		expect(registerMock).not.toHaveBeenCalled();
+		expect(remarkableMock).not.toHaveBeenCalled();
+		expect(session).toBe(fakeSession);
+	});
 });

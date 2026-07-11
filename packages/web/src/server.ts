@@ -3,15 +3,15 @@ import { fileURLToPath } from "node:url";
 import fastifyStatic from "@fastify/static";
 import { CORE_VERSION } from "@remarkable-nonogram-generator/core";
 import Fastify from "fastify";
-import { registerNonogramRoutes } from "./nonogram-routes.js";
-import {
-	createFileNonogramStore,
-	DEFAULT_NONOGRAMS_DIR,
-} from "./nonogram-store.js";
 import {
 	createFileCredentialStore,
 	DEFAULT_CREDENTIALS_PATH,
-} from "./remarkable-credential-store.js";
+} from "./file-credential-store.js";
+import {
+	createFileNonogramStore,
+	DEFAULT_NONOGRAMS_DIR,
+} from "./file-nonogram-store.js";
+import { registerNonogramRoutes } from "./nonogram-routes.js";
 import { registerRemarkableRoutes } from "./remarkable-routes.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -39,8 +39,15 @@ export interface BuildServerOptions {
 	nonogramsPath?: string;
 }
 
+const CONNECTION_TIMEOUT_MS = 30_000;
+const KEEP_ALIVE_TIMEOUT_MS = 5_000;
+
 export function buildServer(options: BuildServerOptions = {}) {
-	const app = Fastify({ logger: true });
+	const app = Fastify({
+		logger: true,
+		connectionTimeout: CONNECTION_TIMEOUT_MS,
+		keepAliveTimeout: KEEP_ALIVE_TIMEOUT_MS,
+	});
 	const credentialStore = createFileCredentialStore(
 		options.credentialsPath ?? DEFAULT_CREDENTIALS_PATH,
 	);
@@ -61,5 +68,8 @@ export function buildServer(options: BuildServerOptions = {}) {
 
 if (process.env.NODE_ENV !== "test") {
 	const app = buildServer();
-	app.listen({ port: resolvePort(), host: "0.0.0.0" });
+	app.listen({ port: resolvePort(), host: "0.0.0.0" }).catch((error) => {
+		app.log.error(error, "Failed to start the server");
+		process.exit(1);
+	});
 }

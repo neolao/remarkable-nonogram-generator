@@ -247,16 +247,22 @@ function drawColumnClues(
 	});
 }
 
+interface DrawNonogramPageOptions {
+	nonogram: Nonogram;
+	rowClues: Clues;
+	columnClues: Clues;
+	layout: NonogramPdfLayout;
+	fontSize: number;
+	showSolution: boolean;
+}
+
 function drawNonogramPage(
 	document: PDFDocument,
 	font: PDFFont,
-	nonogram: Nonogram,
-	rowClues: Clues,
-	columnClues: Clues,
-	layout: NonogramPdfLayout,
-	fontSize: number,
-	showSolution: boolean,
+	options: DrawNonogramPageOptions,
 ): void {
+	const { nonogram, rowClues, columnClues, layout, fontSize, showSolution } =
+		options;
 	const page = document.addPage([
 		REMARKABLE_2_PAGE_WIDTH_PT,
 		REMARKABLE_2_PAGE_HEIGHT_PT,
@@ -283,28 +289,24 @@ export async function renderNonogramToPdf(
 	document.setModificationDate(new Date(0));
 	const font = await document.embedFont(StandardFonts.Helvetica);
 
-	drawNonogramPage(
-		document,
-		font,
+	drawNonogramPage(document, font, {
 		nonogram,
 		rowClues,
 		columnClues,
 		layout,
 		fontSize,
-		false,
-	);
+		showSolution: false,
+	});
 
 	if (options.includeSolution) {
-		drawNonogramPage(
-			document,
-			font,
+		drawNonogramPage(document, font, {
 			nonogram,
 			rowClues,
 			columnClues,
 			layout,
 			fontSize,
-			true,
-		);
+			showSolution: true,
+		});
 	}
 
 	return document.save();

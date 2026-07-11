@@ -36,3 +36,8 @@ export type {
 } from "./remarkable-credential-store.js";
 export type { UploadPdfOptions } from "./remarkable-upload.js";
 export { uploadPdf } from "./remarkable-upload.js";
+export type {
+	SendNonogramOptions,
+	SendNonogramResult,
+} from "./send-nonogram.js";
+export { sendNonogramToRemarkable } from "./send-nonogram.js";

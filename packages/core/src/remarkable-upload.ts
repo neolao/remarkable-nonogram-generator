@@ -1,9 +1,11 @@
+import { withTimeout } from "./network-timeout.js";
 import type { RemarkableSession } from "./remarkable-auth.js";
 
 export interface UploadPdfOptions {
-	readFile: (path: string) => Promise<Uint8Array>;
 	folder?: string;
 }
+
+const REMARKABLE_CLOUD_TIMEOUT_MS = 30_000;
 
 // Looking up a folder by name requires fetching metadata for every entry in the
 // account. rmapi-js's own listItems() does this with unbounded concurrency
@@ -17,7 +19,11 @@ async function resolveFolderId(
 	session: RemarkableSession,
 	folderName: string,
 ): Promise<string> {
-	const ids = await session.listIds();
+	const ids = await withTimeout(
+		session.listIds(),
+		REMARKABLE_CLOUD_TIMEOUT_MS,
+		"Timed out while listing reMarkable Cloud entries",
+	);
 	let cursor = 0;
 	let foundId: string | undefined;
 
@@ -25,7 +31,11 @@ async function resolveFolderId(
 		while (cursor < ids.length && !foundId) {
 			const entry = ids[cursor];
 			cursor++;
-			const metadata = await session.getMetadata(entry.id, entry.hash);
+			const metadata = await withTimeout(
+				session.getMetadata(entry.id, entry.hash),
+				REMARKABLE_CLOUD_TIMEOUT_MS,
+				"Timed out while reading reMarkable Cloud entry metadata",
+			);
 			if (
 				metadata.type === "CollectionType" &&
 				metadata.visibleName === folderName &&
@@ -53,9 +63,9 @@ async function resolveFolderId(
 
 export async function uploadPdf(
 	session: RemarkableSession | undefined,
-	filePath: string,
+	pdfBytes: Uint8Array,
 	visibleName: string,
-	options: UploadPdfOptions,
+	options: UploadPdfOptions = {},
 ): Promise<void> {
 	if (!session) {
 		throw new Error(
@@ -63,19 +73,20 @@ export async function uploadPdf(
 		);
 	}
 
-	let pdfBytes: Uint8Array;
-	try {
-		pdfBytes = await options.readFile(filePath);
-	} catch (cause) {
-		throw new Error(`Local file not found: ${filePath}`, { cause });
-	}
-
 	try {
 		if (options.folder) {
 			const folderId = await resolveFolderId(session, options.folder);
-			await session.putPdf(visibleName, pdfBytes, { parent: folderId });
+			await withTimeout(
+				session.putPdf(visibleName, pdfBytes, { parent: folderId }),
+				REMARKABLE_CLOUD_TIMEOUT_MS,
+				"Timed out while uploading the PDF to reMarkable Cloud",
+			);
 		} else {
-			await session.uploadPdf(visibleName, pdfBytes);
+			await withTimeout(
+				session.uploadPdf(visibleName, pdfBytes),
+				REMARKABLE_CLOUD_TIMEOUT_MS,
+				"Timed out while uploading the PDF to reMarkable Cloud",
+			);
 		}
 	} catch (cause) {
 		throw new Error(

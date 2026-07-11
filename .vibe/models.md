@@ -41,3 +41,14 @@ Defined in: `packages/core/src/nonogram-store.ts`
 | createdAt | string | ISO timestamp |
 | updatedAt | string | ISO timestamp |
 Defined in: `packages/core/src/nonogram-store.ts` — returned by `list()`, omits `cells` so listing doesn't require loading each nonogram fully
+
+## SendNonogramResult
+A discriminated union over the outcome of `sendNonogramToRemarkable()`, keyed by `outcome`:
+| outcome | Extra fields | Meaning |
+|---|---|---|
+| `not_found` | — | No saved nonogram with the given id |
+| `not_authenticated` | — | No reMarkable credentials stored yet |
+| `auth_failed` | `message: string` | Re-authentication with reMarkable Cloud failed |
+| `upload_failed` | `message: string` | The PDF upload to reMarkable Cloud failed |
+| `sent` | `visibleName: string` | Upload succeeded, under this name |
+Defined in: `packages/core/src/send-nonogram.ts` — the web route (`remarkable-routes.ts`) maps each outcome to an HTTP status (404 / 409 / 502 / 502 / 200 respectively)
