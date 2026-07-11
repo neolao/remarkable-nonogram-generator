@@ -1,5 +1,7 @@
 export const CORE_VERSION = "0.1.0";
 
+export type { OcrEngine } from "./nonogram-clue-ocr.js";
+export { createTesseractOcrEngine } from "./nonogram-clue-ocr.js";
 export type { NonogramClues } from "./nonogram-clues.js";
 export { computeNonogramClues } from "./nonogram-clues.js";
 export type { Nonogram } from "./nonogram-grid.js";
@@ -12,6 +14,12 @@ export {
 	REMARKABLE_2_PAGE_HEIGHT_PX,
 	REMARKABLE_2_PAGE_WIDTH_PX,
 } from "./nonogram-grid.js";
+export type {
+	ImportNonogramFromImageOptions,
+	SupportedImageImportType,
+} from "./nonogram-image-import.js";
+export { importNonogramFromImage } from "./nonogram-image-import.js";
+export { solveNonogramFromClues } from "./nonogram-line-solver.js";
 export {
 	REMARKABLE_2_PAGE_HEIGHT_PT,
 	REMARKABLE_2_PAGE_WIDTH_PT,

@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Import a nonogram from an image — Remarkable Nonogram Generator</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <div class="page">
+      <h1>Import a nonogram from an image</h1>
+
+      <div class="card">
+        <p>
+          Upload an image of a puzzle and pick the type that matches it, so the
+          right parsing strategy is used.
+        </p>
+
+        <form id="import-form">
+          <label class="field">
+            Image type
+            <select id="import-type" name="type">
+              <option value="nonograms.org">nonograms.org (printable puzzle page)</option>
+            </select>
+          </label>
+
+          <label class="field">
+            Image file
+            <input type="file" id="import-file" name="image" accept="image/png" required />
+          </label>
+
+          <div class="size-fields">
+            <label class="field">
+              Width (cells)
+              <input type="number" id="import-width" name="width" min="1" required />
+            </label>
+            <label class="field">
+              Height (cells)
+              <input type="number" id="import-height" name="height" min="1" required />
+            </label>
+          </div>
+
+          <div class="actions">
+            <button id="import-submit" class="button" type="submit">Import</button>
+            <a class="button" href="./index.html">Cancel</a>
+          </div>
+          <p id="import-error" role="alert"></p>
+        </form>
+      </div>
+    </div>
+
+    <script type="module" src="./import.js"></script>
+  </body>
+</html>

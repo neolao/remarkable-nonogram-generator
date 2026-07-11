@@ -1,5 +1,6 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import fastifyMultipart from "@fastify/multipart";
 import fastifyStatic from "@fastify/static";
 import { CORE_VERSION } from "@remarkable-nonogram-generator/core";
 import Fastify from "fastify";
@@ -11,6 +12,8 @@ import {
 	createFileNonogramStore,
 	DEFAULT_NONOGRAMS_DIR,
 } from "./file-nonogram-store.js";
+import type { ImportNonogramFromImageFn } from "./nonogram-import-routes.js";
+import { registerNonogramImportRoutes } from "./nonogram-import-routes.js";
 import { registerNonogramRoutes } from "./nonogram-routes.js";
 import { registerRemarkableRoutes } from "./remarkable-routes.js";
 
@@ -37,6 +40,7 @@ export function resolvePort(
 export interface BuildServerOptions {
 	credentialsPath?: string;
 	nonogramsPath?: string;
+	importNonogramFromImageFn?: ImportNonogramFromImageFn;
 }
 
 const CONNECTION_TIMEOUT_MS = 30_000;
@@ -58,10 +62,16 @@ export function buildServer(options: BuildServerOptions = {}) {
 	app.register(fastifyStatic, {
 		root: path.join(__dirname, "../public"),
 	});
+	app.register(fastifyMultipart);
 
 	app.get("/api/version", async () => ({ core: CORE_VERSION }));
 	registerRemarkableRoutes(app, credentialStore, nonogramStore);
 	registerNonogramRoutes(app, nonogramStore);
+	registerNonogramImportRoutes(
+		app,
+		nonogramStore,
+		options.importNonogramFromImageFn,
+	);
 
 	return app;
 }
