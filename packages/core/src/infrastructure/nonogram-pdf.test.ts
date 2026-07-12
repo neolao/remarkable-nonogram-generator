@@ -1,13 +1,13 @@
 import { inflateSync } from "node:zlib";
 import { PDFDocument, StandardFonts } from "pdf-lib";
 import { describe, expect, it } from "vitest";
-import { computeNonogramClues } from "./nonogram-clues.js";
+import { computeNonogramClues } from "../domain/nonogram-clues.js";
 import {
 	createNonogram,
 	MAX_GRID_HEIGHT,
 	MAX_GRID_WIDTH,
 	type Nonogram,
-} from "./nonogram-grid.js";
+} from "../domain/nonogram-grid.js";
 import {
 	REMARKABLE_2_PAGE_HEIGHT_PT,
 	REMARKABLE_2_PAGE_WIDTH_PT,

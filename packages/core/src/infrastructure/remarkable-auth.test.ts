@@ -1,10 +1,10 @@
 import { ResponseError, register, remarkable } from "rmapi-js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { authenticate } from "./remarkable-auth.js";
 import type {
 	CredentialStore,
 	RemarkableCredentials,
-} from "./remarkable-credential-store.js";
+} from "../application/remarkable-credential-store.js";
+import { authenticate } from "./remarkable-auth.js";
 
 vi.mock("rmapi-js", () => {
 	class ResponseError extends Error {

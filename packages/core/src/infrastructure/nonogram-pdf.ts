@@ -5,12 +5,12 @@ import {
 	rgb,
 	StandardFonts,
 } from "pdf-lib";
-import { computeNonogramClues } from "./nonogram-clues.js";
+import { computeNonogramClues } from "../domain/nonogram-clues.js";
 import {
 	type Nonogram,
 	REMARKABLE_2_PAGE_HEIGHT_PX,
 	REMARKABLE_2_PAGE_WIDTH_PX,
-} from "./nonogram-grid.js";
+} from "../domain/nonogram-grid.js";
 
 export const REMARKABLE_2_PAGE_WIDTH_PT =
 	(REMARKABLE_2_PAGE_WIDTH_PX / 226) * 72;

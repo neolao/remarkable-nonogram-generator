@@ -1,8 +1,8 @@
-import { renderNonogramToPdf } from "./nonogram-pdf.js";
+import { renderNonogramToPdf } from "../infrastructure/nonogram-pdf.js";
+import { authenticate } from "../infrastructure/remarkable-auth.js";
+import { uploadPdf } from "../infrastructure/remarkable-upload.js";
 import type { NonogramStore } from "./nonogram-store.js";
-import { authenticate } from "./remarkable-auth.js";
 import type { CredentialStore } from "./remarkable-credential-store.js";
-import { uploadPdf } from "./remarkable-upload.js";
 
 export interface SendNonogramOptions {
 	folder?: string;

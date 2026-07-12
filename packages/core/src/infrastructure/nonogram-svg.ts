@@ -1,5 +1,5 @@
-import { computeNonogramClues } from "./nonogram-clues.js";
-import type { Nonogram } from "./nonogram-grid.js";
+import { computeNonogramClues } from "../domain/nonogram-clues.js";
+import type { Nonogram } from "../domain/nonogram-grid.js";
 
 const DEFAULT_CELL_SIZE_PX = 20;
 const STROKE_WIDTH_PX = 1;

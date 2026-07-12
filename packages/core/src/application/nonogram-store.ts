@@ -1,4 +1,4 @@
-import type { Nonogram } from "./nonogram-grid.js";
+import type { Nonogram } from "../domain/nonogram-grid.js";
 
 export interface NonogramSummary {
 	readonly id: string;

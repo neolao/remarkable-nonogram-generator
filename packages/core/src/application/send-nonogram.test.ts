@@ -1,20 +1,24 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { Nonogram } from "./nonogram-grid.js";
+import type { Nonogram } from "../domain/nonogram-grid.js";
+import { authenticate } from "../infrastructure/remarkable-auth.js";
+import { uploadPdf } from "../infrastructure/remarkable-upload.js";
 import type {
 	NonogramStore,
 	SavedNonogram,
 	SaveNonogramInput,
 } from "./nonogram-store.js";
-import { authenticate } from "./remarkable-auth.js";
 import type {
 	CredentialStore,
 	RemarkableCredentials,
 } from "./remarkable-credential-store.js";
-import { uploadPdf } from "./remarkable-upload.js";
 import { sendNonogramToRemarkable } from "./send-nonogram.js";
 
-vi.mock("./remarkable-auth.js", () => ({ authenticate: vi.fn() }));
-vi.mock("./remarkable-upload.js", () => ({ uploadPdf: vi.fn() }));
+vi.mock("../infrastructure/remarkable-auth.js", () => ({
+	authenticate: vi.fn(),
+}));
+vi.mock("../infrastructure/remarkable-upload.js", () => ({
+	uploadPdf: vi.fn(),
+}));
 
 const authenticateMock = vi.mocked(authenticate);
 const uploadPdfMock = vi.mocked(uploadPdf);

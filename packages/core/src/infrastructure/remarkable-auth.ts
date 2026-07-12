@@ -5,8 +5,8 @@ import {
 	register,
 	remarkable,
 } from "rmapi-js";
+import type { CredentialStore } from "../application/remarkable-credential-store.js";
 import { withTimeout } from "./network-timeout.js";
-import type { CredentialStore } from "./remarkable-credential-store.js";
 
 export type RemarkableSession = RemarkableApi;
 

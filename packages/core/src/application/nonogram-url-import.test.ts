@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type {
 	PageRenderer,
 	RawNonogramPageData,
-} from "./nonogram-page-clues.js";
+} from "../infrastructure/nonogram-page-clues.js";
 import { importNonogramFromUrl } from "./nonogram-url-import.js";
 
 function fakeRenderer(data: RawNonogramPageData): PageRenderer {

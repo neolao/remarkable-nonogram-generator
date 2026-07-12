@@ -1,6 +1,6 @@
 # Module: nonogram-persistence
 **Role:** Save/list/load/delete nonograms as individual JSON files on disk, mirroring the `CredentialStore` / `createFileCredentialStore` split. Backs the full `/api/nonograms/*` CRUD route set ([[web-server]]). Also holds the export/import JSON transfer format used to back up or move a single saved nonogram outside the app ([[web-server]]'s `/export` and `/import-json` routes).
-**Files:** `packages/core/src/nonogram-store.ts`, `packages/core/src/nonogram-json-transfer.ts`, `packages/web/src/file-nonogram-store.ts`
+**Files:** `packages/core/src/application/nonogram-store.ts`, `packages/core/src/domain/nonogram-json-transfer.ts`, `packages/web/src/file-nonogram-store.ts`
 **Exports:**
 - `NonogramStore` — `{ list, load, save, delete }` interface
 - `NonogramSummary` — `{ id, name, width, height, createdAt, updatedAt }`, returned by `list()` without loading each grid's cells
@@ -10,4 +10,4 @@
 - `NonogramExport` — `{ name, width, height, cells }` plain-object shape of the export/import JSON file format
 - `serializeNonogramExport(name, nonogram): NonogramExport` — builds the export payload for a saved nonogram
 - `parseNonogramImport(data: unknown): { name, nonogram }` — validates an untrusted parsed JSON value against the export shape (rejects non-objects and a missing/non-array `cells`) and revalidates the grid through `createNonogram`, so an imported file is never trusted more than a manually-drawn grid — per the project's standing "clues always derived from cells" rule ([[nonogram-domain]])
-**Depends on:** `modules/nonogram-domain.md` (reuses the `Nonogram` type and `createNonogram` validation); the web-layer file is named `file-nonogram-store.ts` (not `nonogram-store.ts`, which is the core interface file) to avoid same-name interface/implementation modules across packages
+**Depends on:** `modules/nonogram-domain.md` (reuses the `Nonogram` type and `createNonogram` validation); the web-layer file is named `file-nonogram-store.ts` (not `nonogram-store.ts`, which is the core interface file) to avoid same-name interface/implementation modules across packages. `nonogram-store.ts` (the port/interface) sits in the `core` package's `application/` layer; `nonogram-json-transfer.ts` (pure entity serialization, no I/O) sits in `domain/` (see ADR `016-ddd-layered-core-package-structure`).

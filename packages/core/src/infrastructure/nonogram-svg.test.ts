@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { computeNonogramClues } from "./nonogram-clues.js";
-import { createNonogram } from "./nonogram-grid.js";
+import { computeNonogramClues } from "../domain/nonogram-clues.js";
+import { createNonogram } from "../domain/nonogram-grid.js";
 import { renderNonogramToSvg } from "./nonogram-svg.js";
 
 interface TextElement {

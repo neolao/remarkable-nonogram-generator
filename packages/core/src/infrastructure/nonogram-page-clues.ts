@@ -1,4 +1,4 @@
-import type { NonogramClues } from "./nonogram-clues.js";
+import type { NonogramClues } from "../domain/nonogram-clues.js";
 
 export interface ClueCell {
 	readonly index: number;

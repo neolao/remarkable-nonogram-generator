@@ -1,6 +1,6 @@
 # Module: nonogram-domain
 **Role:** Core nonogram domain model — the grid of filled/empty cells and its derived row/column clues, which rendering and persistence build on. Pure data + validation, no rendering/persistence/runtime dependency.
-**Files:** `packages/core/src/nonogram-grid.ts`, `packages/core/src/nonogram-clues.ts`
+**Files:** `packages/core/src/domain/nonogram-grid.ts`, `packages/core/src/domain/nonogram-clues.ts`
 **Exports:**
 - `createNonogram(width, height, cells): Nonogram` — validates positive integer dimensions, rejects grids too large for a reMarkable 2 page, and rejects cells not matching the declared dimensions
 - `Nonogram` — `{ width, height, cells }` read-only type

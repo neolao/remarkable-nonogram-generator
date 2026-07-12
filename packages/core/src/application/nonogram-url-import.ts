@@ -1,9 +1,9 @@
-import type { Nonogram } from "./nonogram-grid.js";
-import { solveNonogramFromClues } from "./nonogram-line-solver.js";
+import type { Nonogram } from "../domain/nonogram-grid.js";
+import { solveNonogramFromClues } from "../domain/nonogram-line-solver.js";
 import {
 	extractCluesFromPage,
 	type PageRenderer,
-} from "./nonogram-page-clues.js";
+} from "../infrastructure/nonogram-page-clues.js";
 
 export interface ImportNonogramFromUrlOptions {
 	readonly pageRenderer?: PageRenderer;
