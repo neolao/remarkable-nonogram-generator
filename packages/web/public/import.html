@@ -63,6 +63,34 @@
             <p id="import-json-error" role="alert"></p>
           </form>
         </div>
+
+        <div class="card">
+          <h2>Import all from a zip archive</h2>
+          <p>
+            Choose a zip archive previously exported from the home page's
+            "Export all" button. Every nonogram inside creates a new saved
+            nonogram; an entry that can't be read is skipped and reported
+            instead of stopping the whole import.
+          </p>
+
+          <form id="import-zip-form">
+            <label class="field">
+              Zip file
+              <input type="file" id="import-zip-file" name="file" accept="application/zip,.zip" />
+            </label>
+
+            <div class="actions">
+              <button id="import-zip-submit" class="button" type="submit">Import</button>
+              <a class="button" href="./index.html">Cancel</a>
+            </div>
+            <p id="import-zip-progress" class="import-progress" hidden>
+              <span class="spinner" aria-hidden="true"></span>
+              Import in progress&hellip;
+            </p>
+            <p id="import-zip-error" role="alert"></p>
+            <p id="import-zip-result" role="status"></p>
+          </form>
+        </div>
       </div>
     </div>
 

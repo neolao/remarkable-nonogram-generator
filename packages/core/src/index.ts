@@ -38,6 +38,14 @@ export {
 	serializeNonogramExport,
 } from "./domain/nonogram-json-transfer.js";
 export { solveNonogramFromClues } from "./domain/nonogram-line-solver.js";
+export type {
+	NonogramArchiveEntry,
+	NonogramArchiveParseResult,
+} from "./infrastructure/nonogram-archive.js";
+export {
+	createNonogramArchive,
+	parseNonogramArchive,
+} from "./infrastructure/nonogram-archive.js";
 export type { PageRenderer } from "./infrastructure/nonogram-page-clues.js";
 export { createPuppeteerPageRenderer } from "./infrastructure/nonogram-page-clues.js";
 export {

@@ -11,6 +11,7 @@ import {
 	createFileNonogramStore,
 	DEFAULT_NONOGRAMS_DIR,
 } from "./file-nonogram-store.js";
+import { registerNonogramBulkRoutes } from "./nonogram-bulk-routes.js";
 import { registerNonogramImportJsonRoutes } from "./nonogram-import-json-routes.js";
 import type { ImportNonogramFromUrlFn } from "./nonogram-import-url-routes.js";
 import { registerNonogramImportUrlRoutes } from "./nonogram-import-url-routes.js";
@@ -66,6 +67,15 @@ export function buildServer(options: BuildServerOptions = {}) {
 		root: path.join(__dirname, "../public"),
 	});
 
+	// Fastify has no built-in parser for application/zip; treating the raw
+	// body as an opaque buffer lets the bulk-import route validate/unzip it
+	// itself, mirroring the raw-JSON-body approach used for /import-json.
+	app.addContentTypeParser(
+		"application/zip",
+		{ parseAs: "buffer" },
+		(_request, body, done) => done(null, body),
+	);
+
 	app.get("/api/version", async () => ({ core: CORE_VERSION }));
 	registerRemarkableRoutes(app, credentialStore, nonogramStore);
 	registerNonogramRoutes(app, nonogramStore);
@@ -75,6 +85,7 @@ export function buildServer(options: BuildServerOptions = {}) {
 		options.importNonogramFromUrlFn,
 	);
 	registerNonogramImportJsonRoutes(app, nonogramStore);
+	registerNonogramBulkRoutes(app, nonogramStore);
 
 	return app;
 }

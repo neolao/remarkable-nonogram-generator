@@ -12,6 +12,7 @@
 		"build": "tsc -p tsconfig.json"
 	},
 	"dependencies": {
+		"fflate": "^0.8.3",
 		"pdf-lib": "^1.17.1",
 		"puppeteer": "^25.3.0",
 		"rmapi-js": "^11.0.0"

@@ -144,5 +144,63 @@ function initImportJsonForm() {
 	});
 }
 
+function initImportZipForm() {
+	const form = document.getElementById("import-zip-form");
+	const fileInput = document.getElementById("import-zip-file");
+	const submitButton = document.getElementById("import-zip-submit");
+	const progressElement = document.getElementById("import-zip-progress");
+	const errorElement = document.getElementById("import-zip-error");
+	const resultElement = document.getElementById("import-zip-result");
+	const progressToggle = { submitButton, progressElement };
+
+	form.addEventListener("submit", async (event) => {
+		event.preventDefault();
+		errorElement.textContent = "";
+		resultElement.textContent = "";
+
+		const file = fileInput.files?.[0];
+		if (!file) {
+			errorElement.textContent = "Please choose a zip file to import";
+			return;
+		}
+
+		setImportInProgress(progressToggle, true);
+
+		let response;
+		try {
+			response = await fetch("/api/nonograms/import-zip", {
+				method: "POST",
+				headers: { "Content-Type": "application/zip" },
+				body: file,
+			});
+		} catch {
+			errorElement.textContent =
+				"Could not reach the server. Check your connection and try again.";
+			setImportInProgress(progressToggle, false);
+			return;
+		}
+
+		if (!response.ok) {
+			const body = await response.json().catch(() => ({}));
+			errorElement.textContent = body.error ?? "Failed to import this archive";
+			setImportInProgress(progressToggle, false);
+			return;
+		}
+
+		const body = await response.json();
+		setImportInProgress(progressToggle, false);
+
+		const parts = [`Imported ${body.created.length} nonogram(s).`];
+		if (body.errors.length > 0) {
+			const skipped = body.errors
+				.map((entry) => `${entry.fileName} (${entry.error})`)
+				.join(", ");
+			parts.push(`${body.errors.length} entry(ies) skipped: ${skipped}`);
+		}
+		resultElement.textContent = parts.join(" ");
+	});
+}
+
 initImportUrlForm();
 initImportJsonForm();
+initImportZipForm();

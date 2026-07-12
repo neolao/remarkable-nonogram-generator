@@ -51,6 +51,14 @@ Defined in: `packages/core/src/application/nonogram-store.ts` — returned by `l
 | cells | boolean[][] | Same shape as `Nonogram.cells` |
 Defined in: `packages/core/src/domain/nonogram-json-transfer.ts` — the downloadable/re-importable JSON file format for a single saved nonogram; `parseNonogramImport` revalidates an untrusted value of this shape through `createNonogram` before it's ever saved, so an imported file is never trusted more than a manually-drawn grid
 
+## NonogramArchiveParseResult
+A discriminated union over the outcome of parsing one file inside a bulk-import zip archive, keyed by `ok`:
+| ok | Extra fields | Meaning |
+|---|---|---|
+| `true` | `fileName: string`, `name: string`, `nonogram: Nonogram` | The file parsed as a valid `NonogramExport` |
+| `false` | `fileName: string`, `error: string` | The file wasn't `.json`, or failed `parseNonogramImport` validation |
+Defined in: `packages/core/src/infrastructure/nonogram-archive.ts` — returned per-entry by `parseNonogramArchive()` so one bad file never fails the whole archive; the web route (`nonogram-bulk-routes.ts`) saves every `ok: true` entry and reports the rest under an `errors` array in its response
+
 ## SendNonogramResult
 A discriminated union over the outcome of `sendNonogramToRemarkable()`, keyed by `outcome`:
 | outcome | Extra fields | Meaning |

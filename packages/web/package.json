@@ -15,6 +15,7 @@
 		"tsx": "^4.19.2"
 	},
 	"devDependencies": {
+		"fflate": "^0.8.3",
 		"typescript": "^7.0.2"
 	}
 }
