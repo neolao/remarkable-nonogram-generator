@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-07-12
+
 ### Added
 
 - Nonogram grids can now be created with a width, height, and filled/empty cells, with automatic rejection of invalid or oversized grids that wouldn't fit on a reMarkable 2 page
@@ -47,3 +49,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The "Import in progress" indicator on the import page no longer shows up as soon as the page loads; it now only appears while an import you actually started is running
 - Sending to a reMarkable destination folder no longer fails outright when the reMarkable Cloud service is briefly slow to respond about a single item on your account; the app now retries once before giving up
 - Importing a nonograms.org puzzle no longer fails with "requires guessing" on puzzles that are solvable by reasoning about one cell at a time and ruling out impossible guesses, instead of only puzzles solvable row-by-row/column-by-column at a glance
+
+[Unreleased]: https://github.com/neolao/remarkable-nonogram-generator/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/neolao/remarkable-nonogram-generator/releases/tag/v0.2.0

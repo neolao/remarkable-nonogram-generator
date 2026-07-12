@@ -7,7 +7,7 @@ describe("web server", () => {
 		const response = await app.inject({ method: "GET", url: "/api/version" });
 
 		expect(response.statusCode).toBe(200);
-		expect(response.json()).toEqual({ core: "0.1.0" });
+		expect(response.json()).toEqual({ core: "0.2.0" });
 	});
 
 	it("no longer exposes the image-based import route", async () => {
