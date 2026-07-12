@@ -531,3 +531,55 @@ describe("GET /api/nonograms/:id/preview", () => {
 		expect(response.statusCode).toBe(404);
 	});
 });
+
+describe("GET /api/nonograms/:id/export", () => {
+	it("returns 200 with a JSON body carrying the name and full grid", async () => {
+		const store = createFileNonogramStore(nonogramsPath);
+		const saved = await store.save({
+			name: "First puzzle",
+			nonogram: sampleNonogram,
+		});
+		const app = buildServer({ credentialsPath, nonogramsPath });
+
+		const response = await app.inject({
+			method: "GET",
+			url: `/api/nonograms/${saved.id}/export`,
+		});
+
+		expect(response.statusCode).toBe(200);
+		expect(response.headers["content-type"]).toMatch(/application\/json/);
+		expect(response.json()).toEqual({
+			name: "First puzzle",
+			width: sampleNonogram.width,
+			height: sampleNonogram.height,
+			cells: sampleNonogram.cells,
+		});
+	});
+
+	it("sets a Content-Disposition header suggesting a download filename", async () => {
+		const store = createFileNonogramStore(nonogramsPath);
+		const saved = await store.save({
+			name: "First puzzle",
+			nonogram: sampleNonogram,
+		});
+		const app = buildServer({ credentialsPath, nonogramsPath });
+
+		const response = await app.inject({
+			method: "GET",
+			url: `/api/nonograms/${saved.id}/export`,
+		});
+
+		expect(response.headers["content-disposition"]).toMatch(/attachment/);
+	});
+
+	it("returns 404 for an unknown id", async () => {
+		const app = buildServer({ credentialsPath, nonogramsPath });
+
+		const response = await app.inject({
+			method: "GET",
+			url: "/api/nonograms/does-not-exist/export",
+		});
+
+		expect(response.statusCode).toBe(404);
+	});
+});

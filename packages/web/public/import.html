@@ -36,6 +36,32 @@
           <p id="import-url-error" role="alert"></p>
         </form>
       </div>
+
+      <div class="card">
+        <h2>Import from a JSON file</h2>
+        <p>
+          Choose a JSON file previously exported from this app's nonogram list.
+          As with any import, the row/column clues are recomputed from the
+          file's grid rather than trusted as-is.
+        </p>
+
+        <form id="import-json-form">
+          <label class="field">
+            JSON file
+            <input type="file" id="import-json-file" name="file" accept="application/json,.json" />
+          </label>
+
+          <div class="actions">
+            <button id="import-json-submit" class="button" type="submit">Import</button>
+            <a class="button" href="./index.html">Cancel</a>
+          </div>
+          <p id="import-json-progress" class="import-progress" hidden>
+            <span class="spinner" aria-hidden="true"></span>
+            Import in progress&hellip;
+          </p>
+          <p id="import-json-error" role="alert"></p>
+        </form>
+      </div>
     </div>
 
     <script type="module" src="./import.js"></script>

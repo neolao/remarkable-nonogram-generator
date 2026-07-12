@@ -1,10 +1,13 @@
 # Module: nonogram-persistence
-**Role:** Save/list/load/delete nonograms as individual JSON files on disk, mirroring the `CredentialStore` / `createFileCredentialStore` split. Backs the full `/api/nonograms/*` CRUD route set ([[web-server]]).
-**Files:** `packages/core/src/nonogram-store.ts`, `packages/web/src/file-nonogram-store.ts`
+**Role:** Save/list/load/delete nonograms as individual JSON files on disk, mirroring the `CredentialStore` / `createFileCredentialStore` split. Backs the full `/api/nonograms/*` CRUD route set ([[web-server]]). Also holds the export/import JSON transfer format used to back up or move a single saved nonogram outside the app ([[web-server]]'s `/export` and `/import-json` routes).
+**Files:** `packages/core/src/nonogram-store.ts`, `packages/core/src/nonogram-json-transfer.ts`, `packages/web/src/file-nonogram-store.ts`
 **Exports:**
 - `NonogramStore` — `{ list, load, save, delete }` interface
 - `NonogramSummary` — `{ id, name, width, height, createdAt, updatedAt }`, returned by `list()` without loading each grid's cells
 - `SavedNonogram` — `{ id, name, nonogram, createdAt, updatedAt }`, returned by `load()` and `save()`
 - `SaveNonogramInput` — `{ id?, name, nonogram }` passed to `save()`; omitting `id` creates a new nonogram, providing an existing `id` updates it in place while preserving `createdAt`
 - `createFileNonogramStore(directoryPath): NonogramStore` — one JSON file per nonogram (`<id>.json`), generated id via `crypto.randomUUID()`, rejects ids containing path separators (`assertValidId`) to prevent escaping the store directory, default directory `DEFAULT_NONOGRAMS_DIR` (`~/.config/remarkable-nonogram-generator/nonograms/`). `list()` skips any file that fails to parse as JSON instead of failing the whole listing; `load()` (and thus a specifically-requested id) throws a `Corrupted nonogram file: <path>` error (with the JSON parse `SyntaxError` as `cause`) instead of a bare unlabeled `SyntaxError`, so a corrupted file is diagnosable from the error alone.
-**Depends on:** `modules/nonogram-domain.md` (reuses the `Nonogram` type); the web-layer file is named `file-nonogram-store.ts` (not `nonogram-store.ts`, which is the core interface file) to avoid same-name interface/implementation modules across packages
+- `NonogramExport` — `{ name, width, height, cells }` plain-object shape of the export/import JSON file format
+- `serializeNonogramExport(name, nonogram): NonogramExport` — builds the export payload for a saved nonogram
+- `parseNonogramImport(data: unknown): { name, nonogram }` — validates an untrusted parsed JSON value against the export shape (rejects non-objects and a missing/non-array `cells`) and revalidates the grid through `createNonogram`, so an imported file is never trusted more than a manually-drawn grid — per the project's standing "clues always derived from cells" rule ([[nonogram-domain]])
+**Depends on:** `modules/nonogram-domain.md` (reuses the `Nonogram` type and `createNonogram` validation); the web-layer file is named `file-nonogram-store.ts` (not `nonogram-store.ts`, which is the core interface file) to avoid same-name interface/implementation modules across packages

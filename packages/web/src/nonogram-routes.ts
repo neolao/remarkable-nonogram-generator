@@ -4,6 +4,7 @@ import {
 	type NonogramStore,
 	renderNonogramToPdf,
 	renderNonogramToSvg,
+	serializeNonogramExport,
 } from "@remarkable-nonogram-generator/core";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 
@@ -141,6 +142,34 @@ async function handlePreviewSaved(
 	return renderNonogramToSvg(saved.nonogram);
 }
 
+function exportFilename(name: string): string {
+	const slug = name
+		.trim()
+		.toLowerCase()
+		.replace(/[^a-z0-9]+/g, "-")
+		.replace(/^-+|-+$/g, "");
+	return `${slug || "nonogram"}.json`;
+}
+
+async function handleExport(
+	store: NonogramStore,
+	request: FastifyRequest<{ Params: { id: string } }>,
+	reply: FastifyReply,
+) {
+	const saved = await store.load(request.params.id);
+	if (!saved) {
+		reply.code(404);
+		return { error: "Nonogram not found" };
+	}
+
+	reply.type("application/json");
+	reply.header(
+		"content-disposition",
+		`attachment; filename="${exportFilename(saved.name)}"`,
+	);
+	return serializeNonogramExport(saved.name, saved.nonogram);
+}
+
 async function handleDelete(
 	store: NonogramStore,
 	request: FastifyRequest<{ Params: { id: string } }>,
@@ -187,5 +216,9 @@ export function registerNonogramRoutes(
 	app.get<{ Params: { id: string } }>(
 		"/api/nonograms/:id/preview",
 		(request, reply) => handlePreviewSaved(store, request, reply),
+	);
+	app.get<{ Params: { id: string } }>(
+		"/api/nonograms/:id/export",
+		(request, reply) => handleExport(store, request, reply),
 	);
 }

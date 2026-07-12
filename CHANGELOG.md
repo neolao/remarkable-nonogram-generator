@@ -32,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The home page's saved nonograms list now shows a small thumbnail of each puzzle's drawn grid next to its name and size, making it easier to recognize a puzzle at a glance without opening it
 - The nonograms.org URL import form now shows a progress indicator (spinner and message) while the import is running, since it can take up to a minute, and disables the Import button until it finishes
 - The app can now be deployed as a single Docker container (with a ready-to-use `docker-compose.yml`), including a step-by-step guide for running it on a Synology NAS through Container Manager; saved nonograms and reMarkable pairing persist across container restarts and image updates via a mounted volume
+- Each saved nonogram in the home page's list now has an Export button to download it as a JSON file, and the import page now has a second form to import a nonogram from such a JSON file; as with any import, the row/column clues are recomputed from the file's grid rather than trusted as-is, and a malformed, incorrectly-shaped, or oversized file is rejected with a clear error
 
 ### Changed
 

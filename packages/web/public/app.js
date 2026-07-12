@@ -51,6 +51,12 @@ function initNonogramList() {
 
 		link.append(thumbnail, name, size);
 
+		const exportLink = document.createElement("a");
+		exportLink.className = "button nonogram-export";
+		exportLink.textContent = "Export";
+		exportLink.href = `/api/nonograms/${encodeURIComponent(nonogram.id)}/export`;
+		exportLink.download = "";
+
 		const deleteButton = document.createElement("button");
 		deleteButton.className = "button button-danger nonogram-delete";
 		deleteButton.type = "button";
@@ -59,7 +65,11 @@ function initNonogramList() {
 			handleDelete(nonogram.id, item),
 		);
 
-		item.append(link, deleteButton);
+		const actions = document.createElement("div");
+		actions.className = "nonogram-item-actions";
+		actions.append(exportLink, deleteButton);
+
+		item.append(link, actions);
 		return item;
 	};
 

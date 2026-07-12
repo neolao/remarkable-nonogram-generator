@@ -12,6 +12,14 @@ export {
 	REMARKABLE_2_PAGE_HEIGHT_PX,
 	REMARKABLE_2_PAGE_WIDTH_PX,
 } from "./nonogram-grid.js";
+export type {
+	NonogramExport,
+	NonogramImportResult,
+} from "./nonogram-json-transfer.js";
+export {
+	parseNonogramImport,
+	serializeNonogramExport,
+} from "./nonogram-json-transfer.js";
 export { solveNonogramFromClues } from "./nonogram-line-solver.js";
 export type { PageRenderer } from "./nonogram-page-clues.js";
 export { createPuppeteerPageRenderer } from "./nonogram-page-clues.js";

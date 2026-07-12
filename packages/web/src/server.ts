@@ -11,6 +11,7 @@ import {
 	createFileNonogramStore,
 	DEFAULT_NONOGRAMS_DIR,
 } from "./file-nonogram-store.js";
+import { registerNonogramImportJsonRoutes } from "./nonogram-import-json-routes.js";
 import type { ImportNonogramFromUrlFn } from "./nonogram-import-url-routes.js";
 import { registerNonogramImportUrlRoutes } from "./nonogram-import-url-routes.js";
 import { registerNonogramRoutes } from "./nonogram-routes.js";
@@ -73,6 +74,7 @@ export function buildServer(options: BuildServerOptions = {}) {
 		nonogramStore,
 		options.importNonogramFromUrlFn,
 	);
+	registerNonogramImportJsonRoutes(app, nonogramStore);
 
 	return app;
 }
