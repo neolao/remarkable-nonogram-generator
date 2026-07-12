@@ -41,6 +41,13 @@ function computeClientNonogramClues(cells) {
 	return { rowClues, columnClues };
 }
 
+// Mirrors packages/web/src/nonogram-client-grid-lines.ts; duplicated here
+// because this static page runs unmodified in the browser, with no build
+// step available to import the compiled/tested module.
+function isThickGridlineIndex(index) {
+	return index > 0 && index % 5 === 0;
+}
+
 // Mirrors the rules tested in packages/web/src/nonogram-send-request.ts;
 // duplicated here because this static page runs unmodified in the browser,
 // with no build step available to import the compiled/tested module.
@@ -195,6 +202,8 @@ async function updatePreviewAndDownload(
 	const nonogram = { width, height, cells };
 
 	try {
+		elements.errorElement.textContent = "";
+
 		const previewResponse = await fetch("/api/nonograms/preview", {
 			method: "POST",
 			headers: { "content-type": "application/json" },
@@ -206,6 +215,10 @@ async function updatePreviewAndDownload(
 			elements.previewImage.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgMarkup)}`;
 			elements.previewImage.style.display = "block";
 			elements.previewCard.style.display = "block";
+		} else {
+			const body = await previewResponse.json();
+			elements.errorElement.textContent =
+				body.error ?? "Could not refresh the preview";
 		}
 
 		const generateResponse = await fetch("/api/nonograms/generate", {
@@ -225,6 +238,10 @@ async function updatePreviewAndDownload(
 			downloadState.objectUrl = URL.createObjectURL(pdfBlob);
 			elements.downloadButton.style.display = "inline";
 			elements.previewCard.style.display = "block";
+		} else {
+			const body = await generateResponse.json();
+			elements.errorElement.textContent =
+				body.error ?? "Could not generate the PDF";
 		}
 	} catch {
 		elements.errorElement.textContent =
@@ -247,6 +264,9 @@ function renderGrid(elements, grid, downloadState, width, height, cells) {
 			cell.type = "button";
 			cell.className = "nonogram-cell";
 			cell.classList.toggle("filled", cells[row][column]);
+			cell.classList.toggle("thick-left", isThickGridlineIndex(column));
+			cell.classList.toggle("thick-top", isThickGridlineIndex(row));
+			cell.setAttribute("aria-label", `Row ${row + 1}, column ${column + 1}`);
 			cell.setAttribute("aria-pressed", String(cells[row][column]));
 
 			cell.addEventListener("click", () => {

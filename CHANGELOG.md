@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- The editor's grid now draws a thicker line every 5 rows and every 5 columns while you draw, matching the same look already used in the live preview and generated PDF
+
 ## [0.2.0] - 2026-07-12
 
 ### Added

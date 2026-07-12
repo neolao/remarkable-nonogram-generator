@@ -6,6 +6,7 @@ import {
 } from "@remarkable-nonogram-generator/core";
 import { describe, expect, it } from "vitest";
 import { computeClientNonogramClues } from "./nonogram-client-clues.js";
+import { isThickGridlineIndex } from "./nonogram-client-grid-lines.js";
 import { buildNonogramSaveRequest } from "./nonogram-save-request.js";
 import { buildNonogramSendRequest } from "./nonogram-send-request.js";
 import {
@@ -75,6 +76,7 @@ async function loadMirroredEditorFunctions() {
 	const functionNames = [
 		"computeLineClues",
 		"computeClientNonogramClues",
+		"isThickGridlineIndex",
 		"buildNonogramSendRequest",
 		"buildNonogramSaveRequest",
 		"buildRemarkableFolderCookieAssignment",
@@ -91,6 +93,7 @@ async function loadMirroredEditorFunctions() {
 			rowClues: number[][];
 			columnClues: number[][];
 		};
+		isThickGridlineIndex: typeof isThickGridlineIndex;
 		buildNonogramSendRequest: typeof buildNonogramSendRequest;
 		buildNonogramSaveRequest: typeof buildNonogramSaveRequest;
 		buildRemarkableFolderCookieAssignment: typeof buildRemarkableFolderCookieAssignment;
@@ -135,6 +138,16 @@ describe("editor.js mirrored logic", () => {
 
 		expect(mirroredClues.rowClues).toEqual(coreClues.rowClues);
 		expect(mirroredClues.columnClues).toEqual(coreClues.columnClues);
+	});
+
+	it("flags the same thick-gridline indices as the tested TS module", async () => {
+		const mirrored = await loadMirroredEditorFunctions();
+
+		for (const index of [0, 1, 3, 5, 7, 10]) {
+			expect(mirrored.isThickGridlineIndex(index)).toBe(
+				isThickGridlineIndex(index),
+			);
+		}
 	});
 
 	it("builds the same send request as the tested TS module", async () => {

@@ -474,6 +474,14 @@ button:disabled {
 	background: var(--color-accent);
 }
 
+.nonogram-cell.thick-left {
+	border-left: 2px solid var(--color-text-muted);
+}
+
+.nonogram-cell.thick-top {
+	border-top: 2px solid var(--color-text-muted);
+}
+
 .preview-card {
 	text-align: center;
 }
