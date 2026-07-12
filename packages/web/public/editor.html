@@ -10,72 +10,74 @@
     <div class="page">
       <h1>Nonogram editor</h1>
 
-      <div class="card">
-        <p id="editor-status">Loading...</p>
-        <p id="editor-error" role="alert"></p>
+      <div class="layout-columns">
+        <div class="card">
+          <p id="editor-status">Loading...</p>
+          <p id="editor-error" role="alert"></p>
 
-        <div id="size-section" class="size-section" style="display: none;">
-          <div class="size-fields">
-            <label class="field">
-              Width
-              <input type="number" id="grid-width" min="1" value="10" />
-            </label>
-            <label class="field">
-              Height
-              <input type="number" id="grid-height" min="1" value="10" />
-            </label>
-            <button id="size-submit" class="button" type="button">Create grid</button>
+          <div id="size-section" class="size-section" style="display: none;">
+            <div class="size-fields">
+              <label class="field">
+                Width
+                <input type="number" id="grid-width" min="1" value="10" />
+              </label>
+              <label class="field">
+                Height
+                <input type="number" id="grid-height" min="1" value="10" />
+              </label>
+              <button id="size-submit" class="button" type="button">Create grid</button>
+            </div>
+            <p id="size-error" role="alert"></p>
           </div>
-          <p id="size-error" role="alert"></p>
+
+          <div id="editor-actions" class="editor-actions" style="display: none;">
+            <label class="field">
+              Name
+              <input type="text" id="nonogram-name" placeholder="My nonogram" />
+            </label>
+            <button id="save-button" class="button" type="button">Save</button>
+          </div>
+          <p id="save-error" role="alert"></p>
+          <p id="save-status" role="status"></p>
+
+          <div id="nonogram-board" class="nonogram-board">
+            <div class="board-corner"></div>
+            <div id="column-clues" class="column-clues"></div>
+            <div id="row-clues" class="row-clues"></div>
+            <div id="nonogram-grid" class="nonogram-grid"></div>
+          </div>
         </div>
 
-        <div id="editor-actions" class="editor-actions" style="display: none;">
-          <label class="field">
-            Name
-            <input type="text" id="nonogram-name" placeholder="My nonogram" />
-          </label>
-          <button id="save-button" class="button" type="button">Save</button>
-        </div>
-        <p id="save-error" role="alert"></p>
-        <p id="save-status" role="status"></p>
+        <div id="preview-card" class="card preview-card" style="display: none;">
+          <img id="nonogram-preview" alt="Nonogram preview" style="display: none;" />
 
-        <div id="nonogram-board" class="nonogram-board">
-          <div class="board-corner"></div>
-          <div id="column-clues" class="column-clues"></div>
-          <div id="row-clues" class="row-clues"></div>
-          <div id="nonogram-grid" class="nonogram-grid"></div>
-        </div>
-      </div>
+          <div class="actions">
+            <label class="field field-checkbox">
+              <input type="checkbox" id="include-solution" />
+              Include solution on page 2
+            </label>
+            <button id="download-button" class="button" type="button" style="display: none;">Download PDF</button>
+            <label class="field" id="remarkable-folder-field">
+              reMarkable folder (optional)
+              <input type="text" id="remarkable-folder" name="remarkable-folder" placeholder="Root" />
+            </label>
+            <button id="send-button" class="button" type="button">Send to reMarkable</button>
+          </div>
 
-      <div id="preview-card" class="card preview-card" style="display: none;">
-        <img id="nonogram-preview" alt="Nonogram preview" style="display: none;" />
+          <p id="send-status" role="status"></p>
 
-        <div class="actions">
-          <label class="field field-checkbox">
-            <input type="checkbox" id="include-solution" />
-            Include solution on page 2
-          </label>
-          <button id="download-button" class="button" type="button" style="display: none;">Download PDF</button>
-          <label class="field" id="remarkable-folder-field">
-            reMarkable folder (optional)
-            <input type="text" id="remarkable-folder" name="remarkable-folder" placeholder="Root" />
-          </label>
-          <button id="send-button" class="button" type="button">Send to reMarkable</button>
-        </div>
-
-        <p id="send-status" role="status"></p>
-
-        <div id="pairing-section" style="display: none;">
-          <p>
-            Not connected to reMarkable yet. Get a one-time pairing code at
-            <a href="https://my.remarkable.com/device/browser/connect" target="_blank" rel="noopener">my.remarkable.com/device/browser/connect</a>.
-          </p>
-          <label class="field">
-            Pairing code
-            <input type="text" id="pairing-code" name="pairing-code" />
-          </label>
-          <button id="pairing-submit" class="button" type="button">Pair device</button>
-          <p id="pairing-error" role="alert"></p>
+          <div id="pairing-section" style="display: none;">
+            <p>
+              Not connected to reMarkable yet. Get a one-time pairing code at
+              <a href="https://my.remarkable.com/device/browser/connect" target="_blank" rel="noopener">my.remarkable.com/device/browser/connect</a>.
+            </p>
+            <label class="field">
+              Pairing code
+              <input type="text" id="pairing-code" name="pairing-code" />
+            </label>
+            <button id="pairing-submit" class="button" type="button">Pair device</button>
+            <p id="pairing-error" role="alert"></p>
+          </div>
         </div>
       </div>
 

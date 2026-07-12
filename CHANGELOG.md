@@ -37,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Row and column clue numbers in the live preview and the PDF are now packed more tightly together, leaving more room for the puzzle grid itself while staying just as readable, especially on grids with many clues per row or column
+- The home page, editor, and import pages now use a mobile-first design: comfortably tappable buttons and fields, a saved nonogram's name no longer gets squeezed by its Export/Delete buttons on a narrow screen, and a large puzzle grid scrolls with its row/column clue numbers pinned in view instead of shrinking to fit. On wider screens, the layout is deliberately adapted rather than just stretched — the saved nonograms list becomes a multi-column grid of cards, and paired sections like the editor's grid/preview or the two import forms sit side by side
 
 ### Fixed
 

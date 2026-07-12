@@ -10,57 +10,59 @@
     <div class="page">
       <h1>Import a nonogram</h1>
 
-      <div class="card">
-        <h2>Import from a nonograms.org puzzle URL</h2>
-        <p>
-          Paste the URL of a nonograms.org puzzle page. The clue numbers are read
-          from the page and the grid is worked out from them the same logical way
-          a person solving it would, without ever trusting the source for the
-          actual cell layout.
-        </p>
-
-        <form id="import-url-form">
-          <label class="field">
-            Puzzle URL
-            <input type="url" id="import-url" name="url" placeholder="https://www.nonograms.org/nonograms/i/81801" required />
-          </label>
-
-          <div class="actions">
-            <button id="import-url-submit" class="button" type="submit">Import</button>
-            <a class="button" href="./index.html">Cancel</a>
-          </div>
-          <p id="import-url-progress" class="import-progress" hidden>
-            <span class="spinner" aria-hidden="true"></span>
-            Import in progress&hellip; this can take up to a minute.
+      <div class="layout-columns">
+        <div class="card">
+          <h2>Import from a nonograms.org puzzle URL</h2>
+          <p>
+            Paste the URL of a nonograms.org puzzle page. The clue numbers are read
+            from the page and the grid is worked out from them the same logical way
+            a person solving it would, without ever trusting the source for the
+            actual cell layout.
           </p>
-          <p id="import-url-error" role="alert"></p>
-        </form>
-      </div>
 
-      <div class="card">
-        <h2>Import from a JSON file</h2>
-        <p>
-          Choose a JSON file previously exported from this app's nonogram list.
-          As with any import, the row/column clues are recomputed from the
-          file's grid rather than trusted as-is.
-        </p>
+          <form id="import-url-form">
+            <label class="field">
+              Puzzle URL
+              <input type="url" id="import-url" name="url" placeholder="https://www.nonograms.org/nonograms/i/81801" required />
+            </label>
 
-        <form id="import-json-form">
-          <label class="field">
-            JSON file
-            <input type="file" id="import-json-file" name="file" accept="application/json,.json" />
-          </label>
+            <div class="actions">
+              <button id="import-url-submit" class="button" type="submit">Import</button>
+              <a class="button" href="./index.html">Cancel</a>
+            </div>
+            <p id="import-url-progress" class="import-progress" hidden>
+              <span class="spinner" aria-hidden="true"></span>
+              Import in progress&hellip; this can take up to a minute.
+            </p>
+            <p id="import-url-error" role="alert"></p>
+          </form>
+        </div>
 
-          <div class="actions">
-            <button id="import-json-submit" class="button" type="submit">Import</button>
-            <a class="button" href="./index.html">Cancel</a>
-          </div>
-          <p id="import-json-progress" class="import-progress" hidden>
-            <span class="spinner" aria-hidden="true"></span>
-            Import in progress&hellip;
+        <div class="card">
+          <h2>Import from a JSON file</h2>
+          <p>
+            Choose a JSON file previously exported from this app's nonogram list.
+            As with any import, the row/column clues are recomputed from the
+            file's grid rather than trusted as-is.
           </p>
-          <p id="import-json-error" role="alert"></p>
-        </form>
+
+          <form id="import-json-form">
+            <label class="field">
+              JSON file
+              <input type="file" id="import-json-file" name="file" accept="application/json,.json" />
+            </label>
+
+            <div class="actions">
+              <button id="import-json-submit" class="button" type="submit">Import</button>
+              <a class="button" href="./index.html">Cancel</a>
+            </div>
+            <p id="import-json-progress" class="import-progress" hidden>
+              <span class="spinner" aria-hidden="true"></span>
+              Import in progress&hellip;
+            </p>
+            <p id="import-json-error" role="alert"></p>
+          </form>
+        </div>
       </div>
     </div>
 
