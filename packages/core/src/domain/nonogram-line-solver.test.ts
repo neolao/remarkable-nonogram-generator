@@ -65,6 +65,71 @@ describe("solveNonogramFromClues", () => {
 		).toThrow(/impossible/i);
 	});
 
+	it("solves a real-world puzzle whose clues require testing a hypothesis and rejecting it on contradiction, not just per-line deduction", () => {
+		// nonograms.org puzzle #80351: pure per-line propagation stalls partway
+		// through with a unique solution still reachable only by guessing a
+		// cell's state and discarding the guess if it leads to a line with no
+		// valid placement (contradiction), then resuming propagation.
+		const rowClues = [
+			[3],
+			[4, 2, 1],
+			[3, 1, 1, 1],
+			[3, 1, 2, 1],
+			[2, 1, 2],
+			[4, 2, 2],
+			[2, 2, 2],
+			[1, 3, 1],
+			[2, 2, 1],
+			[4, 3],
+			[1, 1, 2, 2],
+			[1, 1, 1],
+			[1, 1, 1],
+			[5, 2],
+			[3, 2, 3],
+		];
+		const columnClues = [
+			[2],
+			[3],
+			[1, 1],
+			[1, 1, 2, 1],
+			[2, 2, 1, 1],
+			[2, 6, 2],
+			[1, 2, 2],
+			[1, 3, 2],
+			[3, 2, 5],
+			[2, 1, 1],
+			[1, 1],
+			[4, 2, 1],
+			[2, 2, 2, 2],
+			[1, 1, 2, 5],
+			[2, 5],
+		];
+		const expectedRows = [
+			"............###",
+			".....####..##.#",
+			"...###..#..#.#.",
+			"###.#..##..#...",
+			"##.....#...##..",
+			".####..##...##.",
+			"....##..##...##",
+			".....#...###..#",
+			".....##....##.#",
+			"...####.....###",
+			"...#.#..##...##",
+			".....#..#....#.",
+			"......#.#....#.",
+			".....#####..##.",
+			"...###.##.###..",
+		];
+		const expectedCells = expectedRows.map((row) =>
+			row.split("").map((char) => char === "#"),
+		);
+
+		const solved = solveNonogramFromClues(15, 15, { rowClues, columnClues });
+
+		expect(solved.cells).toEqual(expectedCells);
+	});
+
 	it("throws a clear error when the clues describe an ambiguous puzzle that pure logic can't fully resolve", () => {
 		// Classic ambiguous 2x2 case: both diagonals satisfy [[1],[1]] rows and
 		// [[1],[1]] columns, so no amount of line-only deduction picks one.
@@ -75,6 +140,21 @@ describe("solveNonogramFromClues", () => {
 			solveNonogramFromClues(2, 2, { rowClues, columnClues }),
 		).toThrow(/could not fully solve/i);
 	});
+
+	it("gives up quickly instead of exhausting memory on a badly under-constrained puzzle", () => {
+		// Every line only has clue [1] on a length-16 line: an enormous number
+		// of individually-valid placements per line, with no way to narrow them
+		// by propagation alone — the kind of input a mis-parsed source could
+		// produce. Hypothesis-testing must be bounded, or exploring this
+		// combinatorially would exhaust memory rather than reporting failure.
+		const size = 16;
+		const rowClues = Array.from({ length: size }, () => [1]);
+		const columnClues = Array.from({ length: size }, () => [1]);
+
+		expect(() =>
+			solveNonogramFromClues(size, size, { rowClues, columnClues }),
+		).toThrow(/could not fully solve/i);
+	}, 5000);
 
 	it("throws a clear error when the number of row clue lines does not match the declared height", () => {
 		const rowClues = [[0]];

@@ -34,6 +34,50 @@ export function solveNonogramFromClues(
 		new Array<CellState>(width).fill(null),
 	);
 
+	// Impossible-per-line clues (e.g. a clue too long for the declared width)
+	// are a malformed-input error, not a "needs guessing" situation, so this
+	// initial propagation is allowed to throw straight out of the function.
+	propagateToFixpoint(width, height, clues, grid);
+
+	if (!hasUndeterminedCell(grid)) {
+		return createNonogram(width, height, grid as boolean[][]);
+	}
+
+	// Pure per-line propagation stalled with cells still undetermined. Some
+	// puzzles are only solvable by hypothesizing a cell's state and rejecting
+	// the hypothesis if it leads to a line with no valid placement
+	// (contradiction) — this is still "solving by logic alone" (not guessing
+	// at random), so each surviving deduction is sound. It deliberately stops
+	// at this single level rather than a full recursive backtracking search:
+	// each round tests every still-undetermined cell once (bounded work), and
+	// stops once a round makes no further progress, rather than branching
+	// exponentially over combinations of cells — a puzzle that only yields to
+	// deeper multi-cell backtracking is reported as "requires guessing", same
+	// as a genuinely ambiguous one, instead of risking runaway search cost.
+	solveByProbing(width, height, clues, grid);
+
+	if (hasUndeterminedCell(grid)) {
+		throw new Error(
+			"Could not fully solve this puzzle from its clues alone (it requires guessing)",
+		);
+	}
+
+	return createNonogram(width, height, grid as boolean[][]);
+}
+
+function hasUndeterminedCell(grid: ReadonlyArray<CellState[]>): boolean {
+	return grid.some((row) => row.some((cell) => cell === null));
+}
+
+// Mutates `grid` in place, propagating row/column deductions until no line
+// yields any new information. Throws if a line's clue can't be satisfied at
+// all given the cells already fixed.
+function propagateToFixpoint(
+	width: number,
+	height: number,
+	clues: NonogramClues,
+	grid: CellState[][],
+): void {
 	let changed = true;
 	while (changed) {
 		changed = false;
@@ -61,14 +105,88 @@ export function solveNonogramFromClues(
 			}
 		}
 	}
+}
 
-	if (grid.some((row) => row.some((cell) => cell === null))) {
-		throw new Error(
-			"Could not fully solve this puzzle from its clues alone (it requires guessing)",
-		);
+// Repeatedly scans every still-undetermined cell and tests each of its two
+// states by cloning the grid, setting the cell, and propagating: a state that
+// leads to a line with no valid placement is a contradiction, so the cell
+// must be the other state. Deductions found in a round are committed and
+// propagated together before the next round starts. Stops once a round finds
+// no new deduction — remaining nulls at that point mean the puzzle needs
+// genuine multi-cell backtracking (or is ambiguous), which this function
+// deliberately does not attempt. Bounded to at most `width * height` rounds,
+// each doing at most `width * height` probes, since a round that determines
+// no cell stops the loop and there are only that many cells left to resolve.
+function solveByProbing(
+	width: number,
+	height: number,
+	clues: NonogramClues,
+	grid: CellState[][],
+): void {
+	let madeProgress = true;
+	while (madeProgress && hasUndeterminedCell(grid)) {
+		madeProgress = false;
+
+		for (let row = 0; row < height; row++) {
+			for (let col = 0; col < width; col++) {
+				if (grid[row][col] !== null) continue;
+
+				const canBeFilled = isConsistentGuess(
+					width,
+					height,
+					clues,
+					grid,
+					row,
+					col,
+					true,
+				);
+				const canBeEmpty = isConsistentGuess(
+					width,
+					height,
+					clues,
+					grid,
+					row,
+					col,
+					false,
+				);
+
+				if (canBeFilled && !canBeEmpty) {
+					grid[row][col] = true;
+					madeProgress = true;
+				} else if (canBeEmpty && !canBeFilled) {
+					grid[row][col] = false;
+					madeProgress = true;
+				} else if (!canBeFilled && !canBeEmpty) {
+					// Neither state can produce a valid line: the puzzle as a
+					// whole is unsolvable given these clues.
+					throw new Error(
+						"Could not fully solve this puzzle from its clues alone (it requires guessing)",
+					);
+				}
+			}
+		}
+
+		if (madeProgress) propagateToFixpoint(width, height, clues, grid);
 	}
+}
 
-	return createNonogram(width, height, grid as boolean[][]);
+function isConsistentGuess(
+	width: number,
+	height: number,
+	clues: NonogramClues,
+	grid: ReadonlyArray<CellState[]>,
+	row: number,
+	col: number,
+	value: boolean,
+): boolean {
+	const branch = grid.map((line) => line.slice());
+	branch[row][col] = value;
+	try {
+		propagateToFixpoint(width, height, clues, branch);
+		return true;
+	} catch {
+		return false;
+	}
 }
 
 // Merges newly-deduced cells into `known` in place; returns whether anything changed.

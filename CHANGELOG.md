@@ -46,3 +46,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The downloaded and sent PDF is now always a blank puzzle grid showing only the row/column clues, instead of showing the drawn solution with cells already filled in — the live in-browser preview still shows your drawing as-is while you edit it
 - The "Import in progress" indicator on the import page no longer shows up as soon as the page loads; it now only appears while an import you actually started is running
 - Sending to a reMarkable destination folder no longer fails outright when the reMarkable Cloud service is briefly slow to respond about a single item on your account; the app now retries once before giving up
+- Importing a nonograms.org puzzle no longer fails with "requires guessing" on puzzles that are solvable by reasoning about one cell at a time and ruling out impossible guesses, instead of only puzzles solvable row-by-row/column-by-column at a glance
