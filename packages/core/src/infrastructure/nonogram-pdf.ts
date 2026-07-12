@@ -7,10 +7,23 @@ import {
 } from "pdf-lib";
 import { computeNonogramClues } from "../domain/nonogram-clues.js";
 import {
+	createNonogram,
 	type Nonogram,
 	REMARKABLE_2_PAGE_HEIGHT_PX,
 	REMARKABLE_2_PAGE_WIDTH_PX,
 } from "../domain/nonogram-grid.js";
+import {
+	CLUE_FONT_SIZE_RATIO,
+	type Clues,
+	cellRect,
+	columnClueSlotPosition,
+	computeMarginCells,
+	MARGIN_SLOT_RATIO,
+	type NonogramLayout,
+	rowClueSlotPosition,
+	thickGridlineColumns,
+	thickGridlineRows,
+} from "./nonogram-layout.js";
 
 export const REMARKABLE_2_PAGE_WIDTH_PT =
 	(REMARKABLE_2_PAGE_WIDTH_PX / 226) * 72;
@@ -21,50 +34,12 @@ const PAGE_MARGIN_PT = 24;
 const STROKE_COLOR = rgb(0, 0, 0);
 const STROKE_WIDTH_PT = 1;
 const THICK_STROKE_WIDTH_PT = STROKE_WIDTH_PT * 2;
-const THICK_GRIDLINE_INTERVAL = 5;
 const FILL_COLOR_EMPTY = rgb(1, 1, 1);
 const FILL_COLOR_FILLED = rgb(0, 0, 0);
 const TEXT_COLOR = rgb(0, 0, 0);
-const CLUE_FONT_SIZE_RATIO = 0.55;
-// Clue numbers stack in a margin slot narrower than a full grid cell (they
-// only need to fit their own digits, not a full puzzle cell), so the margin
-// takes less of the page while the numbers themselves keep the same size.
-const MARGIN_SLOT_RATIO = 0.75;
 
 export interface RenderNonogramToPdfOptions {
 	includeSolution?: boolean;
-}
-
-type Clues = ReadonlyArray<ReadonlyArray<number>>;
-
-interface NonogramPdfLayout {
-	cellSize: number;
-	marginSlotSize: number;
-	leftOffset: number;
-	topOffset: number;
-	leftMarginCells: number;
-	topMarginCells: number;
-}
-
-function validateNonogram(nonogram: Nonogram): void {
-	const { width, height, cells } = nonogram;
-
-	if (
-		!Number.isInteger(width) ||
-		!Number.isInteger(height) ||
-		width <= 0 ||
-		height <= 0
-	) {
-		throw new Error(
-			`Cannot render a nonogram with invalid dimensions width=${width}, height=${height}`,
-		);
-	}
-
-	if (cells.length !== height || cells.some((row) => row.length !== width)) {
-		throw new Error(
-			`Nonogram cells do not match declared dimensions ${width}x${height}`,
-		);
-	}
 }
 
 // Mirrors the sibling maze project's maze-pdf.ts: shrink the cell size until
@@ -75,9 +50,11 @@ function computeLayout(
 	nonogram: Nonogram,
 	rowClues: Clues,
 	columnClues: Clues,
-): NonogramPdfLayout {
-	const leftMarginCells = Math.max(...rowClues.map((clues) => clues.length));
-	const topMarginCells = Math.max(...columnClues.map((clues) => clues.length));
+): NonogramLayout {
+	const { leftMarginCells, topMarginCells } = computeMarginCells(
+		rowClues,
+		columnClues,
+	);
 
 	const drawableWidth = REMARKABLE_2_PAGE_WIDTH_PT - 2 * PAGE_MARGIN_PT;
 	const drawableHeight = REMARKABLE_2_PAGE_HEIGHT_PT - 2 * PAGE_MARGIN_PT;
@@ -96,25 +73,25 @@ function computeLayout(
 
 	const gridWidthPt = totalWidthCells * cellSize;
 	const gridHeightPt = totalHeightCells * cellSize;
+	const leftOffset = PAGE_MARGIN_PT + (drawableWidth - gridWidthPt) / 2;
+	const topOffset = PAGE_MARGIN_PT + (drawableHeight - gridHeightPt) / 2;
 
 	return {
 		cellSize,
 		marginSlotSize,
-		leftOffset: PAGE_MARGIN_PT + (drawableWidth - gridWidthPt) / 2,
-		topOffset: PAGE_MARGIN_PT + (drawableHeight - gridHeightPt) / 2,
+		gridStartX: leftOffset + leftMarginCells * marginSlotSize,
+		gridStartY: topOffset + topMarginCells * marginSlotSize,
 		leftMarginCells,
 		topMarginCells,
 	};
 }
 
 // Converts a top-left-origin, Y-down local coordinate (matching the SVG
-// renderer's coordinate system) into the bottom-left Y that pdf-lib expects.
-function toPdfRectY(
-	layout: NonogramPdfLayout,
-	localY: number,
-	height: number,
-): number {
-	return REMARKABLE_2_PAGE_HEIGHT_PT - layout.topOffset - localY - height;
+// renderer's coordinate system, and already including the page centering
+// offset baked into the layout's gridStartX/gridStartY) into the bottom-left
+// Y that pdf-lib expects.
+function toPdfRectY(y: number, height: number): number {
+	return REMARKABLE_2_PAGE_HEIGHT_PT - y - height;
 }
 
 // The first page is always the blank puzzle to solve on the device: every
@@ -124,30 +101,19 @@ function toPdfRectY(
 function drawCells(
 	page: PDFPage,
 	nonogram: Nonogram,
-	layout: NonogramPdfLayout,
+	layout: NonogramLayout,
 	showSolution: boolean,
 ): void {
-	const {
-		cellSize,
-		leftOffset,
-		leftMarginCells,
-		topMarginCells,
-		marginSlotSize,
-	} = layout;
-	const gridStartX = leftOffset + leftMarginCells * marginSlotSize;
-	const gridStartYLocal = topMarginCells * marginSlotSize;
-
 	for (let row = 0; row < nonogram.height; row++) {
 		for (let column = 0; column < nonogram.width; column++) {
-			const x = gridStartX + column * cellSize;
-			const localY = gridStartYLocal + row * cellSize;
+			const { x, y, size } = cellRect(layout, row, column);
 			const isFilled = showSolution && nonogram.cells[row][column];
 
 			page.drawRectangle({
 				x,
-				y: toPdfRectY(layout, localY, cellSize),
-				width: cellSize,
-				height: cellSize,
+				y: toPdfRectY(y, size),
+				width: size,
+				height: size,
 				color: isFilled ? FILL_COLOR_FILLED : FILL_COLOR_EMPTY,
 				borderColor: STROKE_COLOR,
 				borderWidth: STROKE_WIDTH_PT,
@@ -156,50 +122,31 @@ function drawCells(
 	}
 }
 
-// Interior lines only, at indices that are a multiple of THICK_GRIDLINE_INTERVAL
-// and strictly between 0 and the grid's width/height: the outer border always
-// stays at the regular stroke width, regardless of the grid's total size.
 function drawThickGridlines(
 	page: PDFPage,
 	nonogram: Nonogram,
-	layout: NonogramPdfLayout,
+	layout: NonogramLayout,
 ): void {
-	const {
-		cellSize,
-		leftOffset,
-		leftMarginCells,
-		topMarginCells,
-		marginSlotSize,
-	} = layout;
-	const gridStartX = leftOffset + leftMarginCells * marginSlotSize;
+	const { gridStartX, gridStartY, cellSize } = layout;
 	const gridEndX = gridStartX + nonogram.width * cellSize;
-	const gridStartYLocal = topMarginCells * marginSlotSize;
-	const gridEndYLocal = gridStartYLocal + nonogram.height * cellSize;
+	const gridEndY = gridStartY + nonogram.height * cellSize;
 
-	for (
-		let column = THICK_GRIDLINE_INTERVAL;
-		column < nonogram.width;
-		column += THICK_GRIDLINE_INTERVAL
-	) {
+	for (const column of thickGridlineColumns(nonogram.width)) {
 		const x = gridStartX + column * cellSize;
 		page.drawLine({
-			start: { x, y: toPdfRectY(layout, gridStartYLocal, 0) },
-			end: { x, y: toPdfRectY(layout, gridEndYLocal, 0) },
+			start: { x, y: toPdfRectY(gridStartY, 0) },
+			end: { x, y: toPdfRectY(gridEndY, 0) },
 			thickness: THICK_STROKE_WIDTH_PT,
 			color: STROKE_COLOR,
 		});
 	}
 
-	for (
-		let row = THICK_GRIDLINE_INTERVAL;
-		row < nonogram.height;
-		row += THICK_GRIDLINE_INTERVAL
-	) {
-		const localY = gridStartYLocal + row * cellSize;
-		const y = toPdfRectY(layout, localY, 0);
+	for (const row of thickGridlineRows(nonogram.height)) {
+		const y = gridStartY + row * cellSize;
+		const pdfY = toPdfRectY(y, 0);
 		page.drawLine({
-			start: { x: gridStartX, y },
-			end: { x: gridEndX, y },
+			start: { x: gridStartX, y: pdfY },
+			end: { x: gridEndX, y: pdfY },
 			thickness: THICK_STROKE_WIDTH_PT,
 			color: STROKE_COLOR,
 		});
@@ -230,27 +177,25 @@ function drawRowClues(
 	page: PDFPage,
 	font: PDFFont,
 	rowClues: Clues,
-	layout: NonogramPdfLayout,
+	layout: NonogramLayout,
 	fontSize: number,
 ): void {
-	const {
-		cellSize,
-		leftOffset,
-		leftMarginCells,
-		topMarginCells,
-		marginSlotSize,
-	} = layout;
-	const gridStartYLocal = topMarginCells * marginSlotSize;
-
 	rowClues.forEach((clues, row) => {
 		clues.forEach((clue, slot) => {
-			const slotXLocal =
-				leftMarginCells * marginSlotSize -
-				(clues.length - slot) * marginSlotSize;
-			const centerX = leftOffset + slotXLocal + marginSlotSize / 2;
-			const localY = gridStartYLocal + row * cellSize;
-			const centerY = toPdfRectY(layout, localY, cellSize) + cellSize / 2;
-			drawClueLabel(page, font, clue, centerX, centerY, fontSize);
+			const { centerX, centerY } = rowClueSlotPosition(
+				layout,
+				row,
+				clues.length,
+				slot,
+			);
+			drawClueLabel(
+				page,
+				font,
+				clue,
+				centerX,
+				toPdfRectY(centerY, 0),
+				fontSize,
+			);
 		});
 	});
 }
@@ -259,27 +204,25 @@ function drawColumnClues(
 	page: PDFPage,
 	font: PDFFont,
 	columnClues: Clues,
-	layout: NonogramPdfLayout,
+	layout: NonogramLayout,
 	fontSize: number,
 ): void {
-	const {
-		cellSize,
-		leftOffset,
-		leftMarginCells,
-		topMarginCells,
-		marginSlotSize,
-	} = layout;
-	const gridStartX = leftOffset + leftMarginCells * marginSlotSize;
-
 	columnClues.forEach((clues, column) => {
 		clues.forEach((clue, slot) => {
-			const slotYLocal =
-				topMarginCells * marginSlotSize -
-				(clues.length - slot) * marginSlotSize;
-			const centerX = gridStartX + column * cellSize + cellSize / 2;
-			const centerY =
-				toPdfRectY(layout, slotYLocal, marginSlotSize) + marginSlotSize / 2;
-			drawClueLabel(page, font, clue, centerX, centerY, fontSize);
+			const { centerX, centerY } = columnClueSlotPosition(
+				layout,
+				column,
+				clues.length,
+				slot,
+			);
+			drawClueLabel(
+				page,
+				font,
+				clue,
+				centerX,
+				toPdfRectY(centerY, 0),
+				fontSize,
+			);
 		});
 	});
 }
@@ -288,7 +231,7 @@ interface DrawNonogramPageOptions {
 	nonogram: Nonogram;
 	rowClues: Clues;
 	columnClues: Clues;
-	layout: NonogramPdfLayout;
+	layout: NonogramLayout;
 	fontSize: number;
 	showSolution: boolean;
 }
@@ -315,7 +258,7 @@ export async function renderNonogramToPdf(
 	nonogram: Nonogram,
 	options: RenderNonogramToPdfOptions = {},
 ): Promise<Uint8Array> {
-	validateNonogram(nonogram);
+	createNonogram(nonogram.width, nonogram.height, nonogram.cells);
 
 	const { rowClues, columnClues } = computeNonogramClues(nonogram);
 	const layout = computeLayout(nonogram, rowClues, columnClues);

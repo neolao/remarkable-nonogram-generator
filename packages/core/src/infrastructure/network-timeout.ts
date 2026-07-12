@@ -1,3 +1,5 @@
+export const REMARKABLE_CLOUD_TIMEOUT_MS = 30_000;
+
 export async function withTimeout<T>(
 	promise: Promise<T>,
 	timeoutMs: number,

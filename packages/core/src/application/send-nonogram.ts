@@ -1,5 +1,5 @@
 import { renderNonogramToPdf } from "../infrastructure/nonogram-pdf.js";
-import { authenticate } from "../infrastructure/remarkable-auth.js";
+import { connectToRemarkable } from "../infrastructure/remarkable-auth.js";
 import { uploadPdf } from "../infrastructure/remarkable-upload.js";
 import type { NonogramStore } from "./nonogram-store.js";
 import type { CredentialStore } from "./remarkable-credential-store.js";
@@ -32,9 +32,9 @@ export async function sendNonogramToRemarkable(
 		return { outcome: "not_authenticated" };
 	}
 
-	let session: Awaited<ReturnType<typeof authenticate>>;
+	let session: Awaited<ReturnType<typeof connectToRemarkable>>;
 	try {
-		session = await authenticate(credentialStore, "");
+		session = await connectToRemarkable(existingCredentials.deviceToken);
 	} catch (error) {
 		return { outcome: "auth_failed", message: (error as Error).message };
 	}

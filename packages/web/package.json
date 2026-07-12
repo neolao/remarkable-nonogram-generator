@@ -9,7 +9,7 @@
 		"start": "tsx src/server.ts"
 	},
 	"dependencies": {
-		"@fastify/static": "^9.3.0",
+		"@fastify/static": "^10.1.0",
 		"@remarkable-nonogram-generator/core": "*",
 		"fastify": "^5.2.1",
 		"tsx": "^4.19.2"

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Nonogram } from "../domain/nonogram-grid.js";
-import { authenticate } from "../infrastructure/remarkable-auth.js";
+import { connectToRemarkable } from "../infrastructure/remarkable-auth.js";
 import { uploadPdf } from "../infrastructure/remarkable-upload.js";
 import type {
 	NonogramStore,
@@ -14,13 +14,13 @@ import type {
 import { sendNonogramToRemarkable } from "./send-nonogram.js";
 
 vi.mock("../infrastructure/remarkable-auth.js", () => ({
-	authenticate: vi.fn(),
+	connectToRemarkable: vi.fn(),
 }));
 vi.mock("../infrastructure/remarkable-upload.js", () => ({
 	uploadPdf: vi.fn(),
 }));
 
-const authenticateMock = vi.mocked(authenticate);
+const connectToRemarkableMock = vi.mocked(connectToRemarkable);
 const uploadPdfMock = vi.mocked(uploadPdf);
 
 const sampleNonogram: Nonogram = {
@@ -76,7 +76,7 @@ class InMemoryCredentialStore implements CredentialStore {
 }
 
 beforeEach(() => {
-	authenticateMock.mockReset();
+	connectToRemarkableMock.mockReset();
 	uploadPdfMock.mockReset();
 });
 
@@ -92,7 +92,7 @@ describe("sendNonogramToRemarkable", () => {
 		);
 
 		expect(result).toEqual({ outcome: "not_found" });
-		expect(authenticateMock).not.toHaveBeenCalled();
+		expect(connectToRemarkableMock).not.toHaveBeenCalled();
 		expect(uploadPdfMock).not.toHaveBeenCalled();
 	});
 
@@ -113,7 +113,7 @@ describe("sendNonogramToRemarkable", () => {
 		);
 
 		expect(result).toEqual({ outcome: "not_authenticated" });
-		expect(authenticateMock).not.toHaveBeenCalled();
+		expect(connectToRemarkableMock).not.toHaveBeenCalled();
 	});
 
 	it("returns auth_failed with the error message when re-authentication fails", async () => {
@@ -127,7 +127,7 @@ describe("sendNonogramToRemarkable", () => {
 		const credentialStore = new InMemoryCredentialStore({
 			deviceToken: "existing-token",
 		});
-		authenticateMock.mockRejectedValue(new Error("session expired"));
+		connectToRemarkableMock.mockRejectedValue(new Error("session expired"));
 
 		const result = await sendNonogramToRemarkable(
 			nonogramStore,
@@ -154,7 +154,7 @@ describe("sendNonogramToRemarkable", () => {
 			deviceToken: "existing-token",
 		});
 		// biome-ignore lint/suspicious/noExplicitAny: partial fake of the opaque core session type
-		authenticateMock.mockResolvedValue({} as any);
+		connectToRemarkableMock.mockResolvedValue({} as any);
 		uploadPdfMock.mockRejectedValue(new Error("upload exploded"));
 
 		const result = await sendNonogramToRemarkable(
@@ -182,7 +182,7 @@ describe("sendNonogramToRemarkable", () => {
 		});
 		// biome-ignore lint/suspicious/noExplicitAny: partial fake of the opaque core session type
 		const fakeSession = { fake: "session" } as any;
-		authenticateMock.mockResolvedValue(fakeSession);
+		connectToRemarkableMock.mockResolvedValue(fakeSession);
 		uploadPdfMock.mockResolvedValue(undefined);
 
 		const result = await sendNonogramToRemarkable(

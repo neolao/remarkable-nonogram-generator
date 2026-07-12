@@ -7,9 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-07-12
+
 ### Added
 
 - The editor's grid now draws a thicker line every 5 rows and every 5 columns while you draw, matching the same look already used in the live preview and generated PDF
+- Each cell in the editor's grid now has a proper label for screen readers, announcing its row and column position
+
+### Changed
+
+- The live preview and PDF renderers now share the same internal grid-layout code instead of each computing it separately; this is an internal reorganization with no change to how the app behaves
+
+### Fixed
+
+- The editor now shows a clear error message if refreshing the live preview or generating the PDF fails, instead of failing silently
+- Importing a zip archive with more than 500 files is now rejected with a clear error instead of risking an overloaded import
+- Importing a nonograms.org puzzle now fails with a clear error instead of silently producing an empty grid if the site's page layout has changed and no clue numbers could be read at all
+- Sending a puzzle to reMarkable now reuses your already-connected session directly instead of re-checking your stored credentials a second time, avoiding a confusing pairing-code error in a rare race condition
 
 ## [0.2.0] - 2026-07-12
 
@@ -54,5 +68,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Sending to a reMarkable destination folder no longer fails outright when the reMarkable Cloud service is briefly slow to respond about a single item on your account; the app now retries once before giving up
 - Importing a nonograms.org puzzle no longer fails with "requires guessing" on puzzles that are solvable by reasoning about one cell at a time and ruling out impossible guesses, instead of only puzzles solvable row-by-row/column-by-column at a glance
 
-[Unreleased]: https://github.com/neolao/remarkable-nonogram-generator/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/neolao/remarkable-nonogram-generator/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/neolao/remarkable-nonogram-generator/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/neolao/remarkable-nonogram-generator/releases/tag/v0.2.0

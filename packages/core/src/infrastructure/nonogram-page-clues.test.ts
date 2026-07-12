@@ -64,12 +64,14 @@ describe("extractCluesFromPage", () => {
 		expect(result.clues.rowClues).toEqual([[2, 1, 4]]);
 	});
 
-	it("treats a line with no clue cells at all as the empty-line clue [0]", async () => {
+	it("treats an individual line with no clue cells as the empty-line clue [0]", async () => {
 		const data: RawNonogramPageData = {
 			width: 2,
 			height: 2,
-			rowClueCells: [],
-			columnClueCells: [],
+			// Row 0 has a clue; row 1 has none (a real empty row).
+			rowClueCells: [{ index: 0, slot: 0, text: "2" }],
+			// Column 0 has a clue; column 1 has none.
+			columnClueCells: [{ index: 0, slot: 0, text: "1" }],
 		};
 
 		const result = await extractCluesFromPage(
@@ -77,8 +79,27 @@ describe("extractCluesFromPage", () => {
 			fakeRenderer(data),
 		);
 
-		expect(result.clues.rowClues).toEqual([[0], [0]]);
-		expect(result.clues.columnClues).toEqual([[0], [0]]);
+		expect(result.clues.rowClues).toEqual([[2], [0]]);
+		expect(result.clues.columnClues).toEqual([[1], [0]]);
+	});
+
+	it("throws a clear error when no clue cells were found anywhere on the page", async () => {
+		// A real nonograms.org page always renders a clue cell (even just "0")
+		// for every line, so finding none at all for the whole grid means the
+		// site's DOM structure changed rather than that the puzzle is empty.
+		const data: RawNonogramPageData = {
+			width: 2,
+			height: 2,
+			rowClueCells: [],
+			columnClueCells: [],
+		};
+
+		await expect(
+			extractCluesFromPage(
+				"https://www.nonograms.org/nonograms/i/1",
+				fakeRenderer(data),
+			),
+		).rejects.toThrow(/could not read any clue values/i);
 	});
 
 	it("throws a clear error when the URL is not a nonograms.org puzzle URL", async () => {

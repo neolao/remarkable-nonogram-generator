@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { MAX_GRID_WIDTH } from "../domain/nonogram-grid.js";
 import {
 	createNonogramArchive,
+	MAX_ARCHIVE_ENTRIES,
 	parseNonogramArchive,
 } from "./nonogram-archive.js";
 
@@ -185,5 +186,22 @@ describe("parseNonogramArchive", () => {
 		const archive = zipSync({});
 
 		expect(parseNonogramArchive(archive)).toEqual([]);
+	});
+
+	it("throws a clear error instead of processing an archive with too many entries", () => {
+		const files: Record<string, Uint8Array> = {};
+		for (let i = 0; i < MAX_ARCHIVE_ENTRIES + 1; i++) {
+			files[`${i}.json`] = new TextEncoder().encode(
+				JSON.stringify({
+					name: `Puzzle ${i}`,
+					width: 1,
+					height: 1,
+					cells: [[true]],
+				}),
+			);
+		}
+		const archive = zipSync(files);
+
+		expect(() => parseNonogramArchive(archive)).toThrow(/too many files/i);
 	});
 });

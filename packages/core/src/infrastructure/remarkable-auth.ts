@@ -6,7 +6,7 @@ import {
 	remarkable,
 } from "rmapi-js";
 import type { CredentialStore } from "../application/remarkable-credential-store.js";
-import { withTimeout } from "./network-timeout.js";
+import { REMARKABLE_CLOUD_TIMEOUT_MS, withTimeout } from "./network-timeout.js";
 
 export type RemarkableSession = RemarkableApi;
 
@@ -22,7 +22,24 @@ const defaultClient: RemarkableClient = { register, remarkable };
 const PAIRING_INSTRUCTIONS_URL =
 	"https://my.remarkable.com/device/browser/connect";
 
-const REMARKABLE_CLOUD_TIMEOUT_MS = 30_000;
+// Opens a session from an already-known device token, skipping the
+// pairing/credential-store step entirely — for callers that have already
+// loaded (or just obtained) a device token themselves.
+export async function connectToRemarkable(
+	deviceToken: string,
+	options: RemarkableAuthOptions = {},
+	client: RemarkableClient = defaultClient,
+): Promise<RemarkableSession> {
+	try {
+		return await withTimeout(
+			client.remarkable(deviceToken, options),
+			REMARKABLE_CLOUD_TIMEOUT_MS,
+			"Timed out while authenticating with reMarkable Cloud",
+		);
+	} catch (cause) {
+		throw new Error("Failed to authenticate with reMarkable Cloud", { cause });
+	}
+}
 
 export async function authenticate(
 	store: CredentialStore,
@@ -60,13 +77,5 @@ export async function authenticate(
 		await store.save({ deviceToken });
 	}
 
-	try {
-		return await withTimeout(
-			client.remarkable(deviceToken, options),
-			REMARKABLE_CLOUD_TIMEOUT_MS,
-			"Timed out while authenticating with reMarkable Cloud",
-		);
-	} catch (cause) {
-		throw new Error("Failed to authenticate with reMarkable Cloud", { cause });
-	}
+	return connectToRemarkable(deviceToken, options, client);
 }

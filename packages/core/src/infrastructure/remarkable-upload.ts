@@ -1,11 +1,9 @@
-import { withTimeout } from "./network-timeout.js";
+import { REMARKABLE_CLOUD_TIMEOUT_MS, withTimeout } from "./network-timeout.js";
 import type { RemarkableSession } from "./remarkable-auth.js";
 
 export interface UploadPdfOptions {
 	folder?: string;
 }
-
-const REMARKABLE_CLOUD_TIMEOUT_MS = 30_000;
 
 // Looking up a folder by name requires fetching metadata for every entry in the
 // account. rmapi-js's own listItems() does this with unbounded concurrency
@@ -18,6 +16,17 @@ const FOLDER_LOOKUP_CONCURRENCY = 15;
 const METADATA_TIMEOUT_MESSAGE =
 	"Timed out while reading reMarkable Cloud entry metadata";
 
+function fetchMetadata(
+	session: RemarkableSession,
+	entry: { id: string; hash: string },
+): ReturnType<RemarkableSession["getMetadata"]> {
+	return withTimeout(
+		session.getMetadata(entry.id, entry.hash),
+		REMARKABLE_CLOUD_TIMEOUT_MS,
+		METADATA_TIMEOUT_MESSAGE,
+	);
+}
+
 // A single slow entry among the potentially hundreds an account can hold
 // shouldn't abort the whole folder lookup: retry once before giving up on it,
 // to absorb a one-off slowdown from the reMarkable Cloud service.
@@ -26,11 +35,7 @@ async function getMetadataWithRetry(
 	entry: { id: string; hash: string },
 ): ReturnType<RemarkableSession["getMetadata"]> {
 	try {
-		return await withTimeout(
-			session.getMetadata(entry.id, entry.hash),
-			REMARKABLE_CLOUD_TIMEOUT_MS,
-			METADATA_TIMEOUT_MESSAGE,
-		);
+		return await fetchMetadata(session, entry);
 	} catch (cause) {
 		if (
 			!(cause instanceof Error) ||
@@ -38,11 +43,7 @@ async function getMetadataWithRetry(
 		) {
 			throw cause;
 		}
-		return await withTimeout(
-			session.getMetadata(entry.id, entry.hash),
-			REMARKABLE_CLOUD_TIMEOUT_MS,
-			METADATA_TIMEOUT_MESSAGE,
-		);
+		return await fetchMetadata(session, entry);
 	}
 }
 

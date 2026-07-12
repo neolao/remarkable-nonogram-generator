@@ -32,6 +32,20 @@ export async function extractCluesFromPage(
 
 	const data = await renderer.renderNonogramPage(url);
 
+	if (
+		data.width > 0 &&
+		data.height > 0 &&
+		data.rowClueCells.length === 0 &&
+		data.columnClueCells.length === 0
+	) {
+		// A real puzzle page always renders a clue cell (even just "0") for
+		// every line, so finding none at all means the site's DOM structure
+		// changed, not that the puzzle happens to be blank.
+		throw new Error(
+			`Could not read any clue values from the page — the site's structure may have changed: ${url}`,
+		);
+	}
+
 	return {
 		width: data.width,
 		height: data.height,

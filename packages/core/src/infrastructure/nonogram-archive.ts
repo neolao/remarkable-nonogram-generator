@@ -10,6 +10,11 @@ export interface NonogramArchiveEntry {
 	readonly nonogram: Nonogram;
 }
 
+// Caps the work a single import-zip request can trigger (one store.save()
+// call per entry, processed sequentially) regardless of how large an
+// uploaded archive claims to be.
+export const MAX_ARCHIVE_ENTRIES = 500;
+
 export type NonogramArchiveParseResult =
 	| { ok: true; fileName: string; name: string; nonogram: Nonogram }
 	| { ok: false; fileName: string; error: string };
@@ -48,8 +53,15 @@ export function parseNonogramArchive(
 		});
 	}
 
+	const entries = Object.entries(files);
+	if (entries.length > MAX_ARCHIVE_ENTRIES) {
+		throw new Error(
+			`The uploaded archive has too many files (max ${MAX_ARCHIVE_ENTRIES})`,
+		);
+	}
+
 	const decoder = new TextDecoder();
-	return Object.entries(files).map(([fileName, fileBytes]) => {
+	return entries.map(([fileName, fileBytes]) => {
 		if (!fileName.toLowerCase().endsWith(".json")) {
 			return {
 				ok: false,
