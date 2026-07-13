@@ -16,3 +16,5 @@ The fix is to replace the enumeration-based line solver with an algorithm that d
 
 ## Notes
 The single-level hypothesis-probing pass added on top of line propagation (for puzzles like 80351) is out of scope here and should be left as-is; this item only concerns replacing what happens inside a single line's deduction. The user has offered to pair on this one rather than have it run fully autonomously — worth confirming with them before diving into the DP/bitset algorithm design during `/vibe:feature`.
+
+Reference implementation to look at: https://github.com/monkeyArms/nonogram — may contain a non-enumeration-based line-solving algorithm worth studying/adapting for this fix.
