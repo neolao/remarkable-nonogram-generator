@@ -236,6 +236,9 @@ function solveLine(
 	// The reversed line/blocks describe the exact same set of valid
 	// placements read backwards, so this cannot fail now that `leftmost` did.
 	const rightmost = pushLeft([...line].reverse(), [...blocks].reverse());
+	if (!rightmost) {
+		throw impossibleLineError(length, lineKind, lineIndex);
+	}
 	rightmost.reverse();
 
 	markRunIds(leftmost);
