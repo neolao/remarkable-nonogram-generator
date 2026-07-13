@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-07-14
+
+### Changed
+
+- Docker deployments and local development now require Node.js 25 or later (previously 22)
+
 ### Fixed
 
 - Importing a nonograms.org puzzle with unusually long or complex clues no longer crashes the server
@@ -72,6 +78,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Sending to a reMarkable destination folder no longer fails outright when the reMarkable Cloud service is briefly slow to respond about a single item on your account; the app now retries once before giving up
 - Importing a nonograms.org puzzle no longer fails with "requires guessing" on puzzles that are solvable by reasoning about one cell at a time and ruling out impossible guesses, instead of only puzzles solvable row-by-row/column-by-column at a glance
 
-[Unreleased]: https://github.com/neolao/remarkable-nonogram-generator/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/neolao/remarkable-nonogram-generator/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/neolao/remarkable-nonogram-generator/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/neolao/remarkable-nonogram-generator/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/neolao/remarkable-nonogram-generator/releases/tag/v0.2.0
