@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Importing a nonograms.org puzzle with unusually long or complex clues no longer crashes the server
+
 ## [0.3.0] - 2026-07-12
 
 ### Added

@@ -201,9 +201,17 @@ function applyLine(known: CellState[], solved: CellState[]): boolean {
 	return changed;
 }
 
-// For each cell, determines whether it is filled/empty in every placement of
-// `blocks` on a line of `length` consistent with the currently `known`
-// cells, by enumerating those placements. Undetermined cells stay null.
+// For each cell, determines whether it is filled/empty in every valid
+// placement of `blocks` on a line of `length` consistent with the currently
+// `known` cells — without ever enumerating those placements. The block set
+// is pushed as far left as it will go, then as far right as it will go; a
+// cell that lands in the same block (by position, tracked via `markRunIds`)
+// in both extremes must hold that state in every placement in between, since
+// there's no room for it to be anything else. Runs in time proportional to
+// line length x number of blocks, whereas the placement count this replaces
+// can reach into the hundreds of millions for a single line on a real,
+// densely-clued 45x45 puzzle (nonograms.org #80350), exhausting the Node.js
+// heap before hypothesis-testing is even reached.
 function solveLine(
 	length: number,
 	clue: ReadonlyArray<number>,
@@ -212,85 +220,104 @@ function solveLine(
 	lineIndex: number,
 ): CellState[] {
 	const blocks = clue.length === 1 && clue[0] === 0 ? [] : [...clue];
-	const placements = enumerateLinePlacements(length, blocks, known);
 
-	if (placements.length === 0) {
-		throw new Error(
-			`${lineKind === "row" ? "Row" : "Column"} ${lineIndex} clue is impossible to satisfy for a line of length ${length}`,
-		);
+	if (blocks.length === 0) {
+		if (known.some((cell) => cell === true)) {
+			throw impossibleLineError(length, lineKind, lineIndex);
+		}
+		return new Array(length).fill(false);
 	}
 
-	const result: CellState[] = new Array(length).fill(null);
-	for (let i = 0; i < length; i++) {
-		const allFilled = placements.every((placement) => placement[i]);
-		const allEmpty = placements.every((placement) => !placement[i]);
-		if (allFilled) result[i] = true;
-		else if (allEmpty) result[i] = false;
+	const line = known.map(toPushCell);
+	const leftmost = pushLeft(line, blocks);
+	if (!leftmost) {
+		throw impossibleLineError(length, lineKind, lineIndex);
 	}
-	return result;
+	// The reversed line/blocks describe the exact same set of valid
+	// placements read backwards, so this cannot fail now that `leftmost` did.
+	const rightmost = pushLeft([...line].reverse(), [...blocks].reverse());
+	rightmost.reverse();
+
+	markRunIds(leftmost);
+	markRunIds(rightmost);
+
+	return leftmost.map((value, i) =>
+		value === rightmost[i] ? value % 2 === 1 : known[i],
+	);
 }
 
-function enumerateLinePlacements(
+function impossibleLineError(
 	length: number,
+	lineKind: "row" | "column",
+	lineIndex: number,
+): Error {
+	return new Error(
+		`${lineKind === "row" ? "Row" : "Column"} ${lineIndex} clue is impossible to satisfy for a line of length ${length}`,
+	);
+}
+
+// -1 = known-empty, 0 = unknown, 1 = known-filled: the encoding `pushLeft`
+// operates on internally (distinct from `CellState` at this module's edges).
+function toPushCell(cell: CellState): number {
+	return cell === true ? 1 : cell === false ? -1 : 0;
+}
+
+// Finds the leftmost-fitting placement of `blocks` on `line` consistent with
+// already-known cells (-1/1), or null if none exists. `shouldSkipPosition`
+// prunes positions that can't matter (no known-filled cell forces trying
+// them) as a speed optimization; it never prunes the only valid position.
+function pushLeft(
+	line: ReadonlyArray<number>,
 	blocks: ReadonlyArray<number>,
-	known: ReadonlyArray<CellState>,
-): boolean[][] {
-	const results: boolean[][] = [];
-	const current: boolean[] = new Array(length).fill(false);
-
-	function place(blockIndex: number, position: number): void {
-		if (blockIndex === blocks.length) {
-			for (let i = position; i < length; i++) {
-				if (known[i] === true) return;
-			}
-			results.push(current.slice());
-			return;
-		}
-
-		const blockSize = blocks[blockIndex];
-		const minSpaceAfter = blocks
-			.slice(blockIndex + 1)
-			.reduce((sum, size) => sum + size + 1, 0);
-
-		for (
-			let start = position;
-			start + blockSize + minSpaceAfter <= length;
-			start++
-		) {
-			let consistent = true;
-			for (let i = position; i < start; i++) {
-				if (known[i] === true) {
-					consistent = false;
-					break;
-				}
-				current[i] = false;
-			}
-			if (!consistent) continue;
-
-			for (let i = start; i < start + blockSize; i++) {
-				if (known[i] === false) {
-					consistent = false;
-					break;
-				}
-				current[i] = true;
-			}
-			if (!consistent) continue;
-
-			const afterBlock = start + blockSize;
-			const hasNextBlock = blockIndex + 1 < blocks.length;
-			if (hasNextBlock) {
-				// The single cell right after this block is a mandatory gap;
-				// it can't be part of the next block, so a known-filled cell
-				// there makes this placement invalid.
-				if (known[afterBlock] === true) continue;
-				current[afterBlock] = false;
-				place(blockIndex + 1, afterBlock + 1);
-			} else {
-				place(blockIndex + 1, afterBlock);
-			}
-		}
+): number[] | null {
+	if (blocks.length === 0) {
+		return line.includes(1) ? null : line.slice();
 	}
 
-	place(0, 0);
-	return results;
+	const blockSize = blocks[0];
+	let maxIndex = line.indexOf(1);
+	if (maxIndex === -1) maxIndex = line.length - blockSize;
+
+	for (let i = 0; i <= maxIndex; i++) {
+		if (shouldSkipPosition(line, blockSize, i)) continue;
+
+		const rest = pushLeft(line.slice(i + blockSize + 1), blocks.slice(1));
+		if (!rest) continue;
+
+		const placed = line.slice();
+		for (let x = i; x < i + blockSize; x++) placed[x] = 1;
+		for (let x = 0; x < rest.length; x++)
+			placed[x + i + blockSize + 1] = rest[x];
+		return placed;
+	}
+	return null;
+}
+
+function shouldSkipPosition(
+	line: ReadonlyArray<number>,
+	blockSize: number,
+	i: number,
+): boolean {
+	let noKnownFilledCellForcesThisSpot = line[i - 1] === 0;
+	let collidesWithKnownState = line[i + blockSize] === 1;
+	for (let x = i; x < i + blockSize; x++) {
+		if (line[x] === -1 || x >= line.length) {
+			collidesWithKnownState = true;
+			break;
+		}
+		if (line[x]) noKnownFilledCellForcesThisSpot = false;
+	}
+	return noKnownFilledCellForcesThisSpot || collidesWithKnownState;
+}
+
+// Mutates a fully-determined 0/1 line in place, replacing each cell with an
+// id that increments every time a run of filled cells starts or ends — two
+// cells share an id only if they belong to the same contiguous block-run.
+function markRunIds(line: number[]): void {
+	let runId = line[0] % 2;
+	for (let i = 0; i < line.length; i++) {
+		if (line[i] === -1) line[i] = 0;
+		if (line[i] % 2 !== runId % 2) runId++;
+		line[i] = runId;
+	}
 }

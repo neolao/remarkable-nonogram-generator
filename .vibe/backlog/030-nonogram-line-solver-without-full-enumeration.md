@@ -1,5 +1,5 @@
 ---
-status: todo
+status: in_progress
 ---
 # Nonogram Line Solver Without Full Placement Enumeration
 
