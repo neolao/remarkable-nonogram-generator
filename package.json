@@ -5,7 +5,7 @@
 	"description": "Nonogram generator with a manual grid editor and automatic upload to reMarkable",
 	"type": "module",
 	"engines": {
-		"node": ">=22"
+		"node": ">=25"
 	},
 	"workspaces": [
 		"packages/*"

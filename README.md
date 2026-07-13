@@ -22,7 +22,7 @@ Container Manager instructions.
 <!-- vibe:begin:install -->
 ## Installation
 
-Requires Node.js >= 22.
+Requires Node.js >= 25.
 
 ```bash
 npm install

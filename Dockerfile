@@ -1,4 +1,4 @@
-FROM node:22-bookworm-slim AS build
+FROM node:25-bookworm-slim AS build
 
 WORKDIR /app
 
@@ -24,7 +24,7 @@ RUN npm run build
 RUN npm prune --omit=dev
 
 
-FROM node:22-bookworm-slim
+FROM node:25-bookworm-slim
 
 RUN apt-get update \
 	&& apt-get install --no-install-recommends -y chromium fonts-liberation ca-certificates \
